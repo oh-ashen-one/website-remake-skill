@@ -41,8 +41,9 @@ metadata:
 11. [Step 9: Closing & Objection Handling](#step-9-closing--objection-handling)
 12. [Step 10: API Keys & Setup](#step-10-api-keys--setup)
 13. [Step 11: Fast Build Path (AntiGravity + Stitch)](#step-11-fast-build-path-antigravity--stitch)
-14. [SEO & GEO Optimization](#seo--geo-optimization-step)
-15. [Anthropic Frontend Design + Web Interface Guidelines + SEO Audit](#anthropic-frontend-design--web-interface-guidelines--seo-audit--synthesized)
+14. [Step 12: Autonomous Cron Setup](#step-12-autonomous-cron-setup)
+15. [SEO & GEO Optimization](#seo--geo-optimization-step)
+16. [Anthropic Frontend Design + Web Interface Guidelines + SEO Audit](#anthropic-frontend-design--web-interface-guidelines--seo-audit--synthesized)
 
 ---
 
@@ -1753,6 +1754,115 @@ Subject line + email body. Use [SENDER_NAME] as signature.
 | Client needs source code | — | ✅ |
 | Speed is the priority | ✅ | — |
 | Absolute design control | — | ✅ |
+
+
+## Step 12: Autonomous Cron Setup
+
+Automate the entire pipeline to run daily without human intervention. Uses `openclaw cron add` to schedule an isolated agent session that finds targets, builds sites, sends outreach emails, and posts results to Discord.
+
+### Scripts Overview
+
+Two new scripts power the automated pipeline:
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/build-site.sh` | Takes scraped site content → builds with Claude Code → deploys to Netlify → returns live URL |
+| `scripts/run-pipeline.sh` | Master orchestrator: find-targets → scrape → build → email → summary |
+
+### Manual Run
+
+```bash
+# Run the full pipeline manually
+bash scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name "Alex"
+
+# Or build a single site
+bash scripts/build-site.sh \
+  --domain "brightsmile.com" \
+  --scrape-dir "/tmp/website-remake-targets/brightsmile_com" \
+  --niche "dentist" \
+  --city "chicago"
+```
+
+### Cron Schedule (Weekdays 9 AM Chicago Time)
+
+Add this cron job to run the pipeline every weekday at 9 AM Central:
+
+```json
+openclaw cron add '{
+  "schedule": "0 9 * * 1-5",
+  "timezone": "America/Chicago",
+  "name": "website-remake-daily",
+  "delivery": {
+    "type": "discord",
+    "channel": "#website-rebuilder"
+  },
+  "payload": {
+    "type": "agentTurn",
+    "model": "claude-haiku-4-5-20251001",
+    "isolated": true,
+    "message": "Run website-remake pipeline for dentist in chicago. Use scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name Alex. Post results to #website-rebuilder."
+  }
+}'
+```
+
+### What the Cron Does Each Day
+
+| Time | Action | Output |
+|------|--------|--------|
+| 9:00 AM CT | Agent wakes up in isolated session | — |
+| 9:01 AM | Runs `find-targets.sh` → searches Brave for outdated sites | Markdown table of targets |
+| 9:02 AM | Runs `scrape-site.sh` on top 3 targets | `/tmp/website-remake-targets/*/content.md` |
+| 9:05 AM | Runs `build-site.sh` for each target → Claude Code builds site | Full website in `/tmp/website-rebuilds/` |
+| 9:15 AM | Deploys each build to Netlify | Live `.netlify.app` URLs |
+| 9:16 AM | Extracts business emails from scraped content | — |
+| 9:17 AM | Sends cold outreach via `send-email.sh` (AgentMail) | Email delivery confirmation |
+| 9:18 AM | Posts summary to `#website-rebuilder` Discord channel | "3 built, 2 emails sent, 0 failed" |
+
+### Enable / Disable
+
+```bash
+# List active crons
+openclaw cron list
+
+# Disable (pause without deleting)
+openclaw cron disable website-remake-daily
+
+# Re-enable
+openclaw cron enable website-remake-daily
+
+# Delete entirely
+openclaw cron delete website-remake-daily
+```
+
+### Customizing the Niche & City
+
+Edit the cron payload message to target different markets:
+
+```bash
+# Lawyers in Miami
+openclaw cron add '{
+  "schedule": "0 9 * * 1-5",
+  "timezone": "America/Chicago",
+  "name": "website-remake-lawyers-miami",
+  "payload": {
+    "type": "agentTurn",
+    "model": "claude-haiku-4-5-20251001",
+    "isolated": true,
+    "message": "Run website-remake pipeline for lawyer in miami. Use scripts/run-pipeline.sh --niche lawyer --city miami --limit 3 --sender-name Alex."
+  }
+}'
+```
+
+### Required Secrets
+
+All secrets must be present in `$HOME/.openclaw/workspace/.secrets/` before the cron fires:
+
+| File | Used By |
+|------|---------|
+| `brave-search-api-key.txt` | `find-targets.sh` — Brave Search API |
+| `firecrawl-api-key.txt` | `scrape-site.sh` — Firecrawl site analysis |
+| `netlify-token.txt` | `build-site.sh` — Netlify deployment |
+| `agentmail-api-key.txt` | `send-email.sh` — cold outreach emails |
 
 
 ## SEO & GEO Optimization Step
