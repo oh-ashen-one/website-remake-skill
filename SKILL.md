@@ -36,7 +36,7 @@ metadata:
 6. [Step 4: Animation Stack & Premium Effects](#step-4-animation-stack--premium-effects)
 7. [Step 5: Anti-Slop Design Checklist](#step-5-anti-slop-design-checklist)
 8. [Step 6: SEO Implementation](#step-6-seo-implementation)
-9. [Step 7: Deployment to Netlify](#step-7-deployment-to-vercel)
+9. [Step 7: Deployment to Netlify](#step-7-deployment-to-netlify)
 10. [Step 8: Cold Outreach Strategy](#step-8-cold-outreach-strategy)
 11. [Step 9: Closing & Objection Handling](#step-9-closing--objection-handling)
 12. [Step 10: API Keys & Setup](#step-10-api-keys--setup)
@@ -1047,7 +1047,7 @@ echo "index.html" > index.html  # Claude Code output
 echo "README.md" > README.md
 echo "node_modules/" > .gitignore
 echo "*.env" >> .gitignore
-echo ".vercel/" >> .gitignore
+echo "" >> .gitignore
 
 # Initial commit
 git add .
@@ -1071,17 +1071,17 @@ gh repo create [business-name]-website --public --source . --remote origin --pus
 
 ```bash
 # Install Netlify CLI
-npm install -g vercel
+npm install -g netlify-cli
 
 # Deploy from repo
-vercel --prod
+netlify deploy --prod
 # Netlify auto-detects static HTML
 # Live URL: https://[business-name]-website.netlify.app
 ```
 
 ### Netlify Configuration (Optional)
 
-Create `vercel.json` for advanced options:
+Create `netlify.toml` for advanced options:
 
 ```json
 {
@@ -1525,7 +1525,7 @@ Create `.env` file in your project root:
 FIRECRAWL_API_KEY=your_firecrawl_api_key
 
 # Netlify (deployment)
-NETLIFY_TOKEN=your_vercel_token
+NETLIFY_TOKEN=your_netlify_token
 
 # Gemini (image generation for hero visuals)
 GEMINI_API_KEY=your_gemini_api_key
@@ -1565,7 +1565,7 @@ GITHUB_TOKEN=your_github_token
    ```
 5. Test:
    ```bash
-   vercel --prod
+   netlify deploy --prod
    ```
 
 #### **Gemini API Key**

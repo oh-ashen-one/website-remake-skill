@@ -83,7 +83,13 @@ if [ -f "$SECRETS_DIR/netlify.env" ]; then
   source "$SECRETS_DIR/netlify.env"
 fi
 # Also check memory for known token
-NETLIFY_TOKEN="${NETLIFY_TOKEN:-nfp_5vWVVyCFtrAjFod1kQEaycPCBaBE1y6a65e3}"
+# Load Netlify token from secrets — never hardcode
+if [ -f "$SECRETS_DIR/netlify-token.txt" ]; then
+  NETLIFY_TOKEN=$(cat "$SECRETS_DIR/netlify-token.txt" | tr -d '[:space:]')
+fi
+if [ -z "$NETLIFY_TOKEN" ]; then
+  echo "⚠️  NETLIFY_TOKEN not found in $SECRETS_DIR/netlify-token.txt — deploy step will need manual token"
+fi
 
 echo ""
 echo "════════════════════════════════════════"
