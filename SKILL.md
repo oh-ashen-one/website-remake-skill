@@ -1,6 +1,6 @@
 ---
 name: website-remake
-description: Find businesses with outdated websites, scrape their existing site, rebuild it to $10K quality with 3D animations/GSAP/scroll effects, auto-deploy to Vercel, and sell it back via cold email. Full pipeline from target finding to payment.
+description: Find businesses with outdated websites, scrape their existing site, rebuild it to $10K quality with 3D animations/GSAP/scroll effects, auto-deploy to Netlify, and sell it back via cold email. Full pipeline from target finding to payment.
 tags:
   - business-development
   - web-design
@@ -15,7 +15,7 @@ metadata:
     requires:
       env:
         - FIRECRAWL_API_KEY
-        - VERCEL_TOKEN
+        - NETLIFY_TOKEN
         - GEMINI_API_KEY
         - AGENTMAIL_API_KEY
 ---
@@ -36,7 +36,7 @@ metadata:
 6. [Step 4: Animation Stack & Premium Effects](#step-4-animation-stack--premium-effects)
 7. [Step 5: Anti-Slop Design Checklist](#step-5-anti-slop-design-checklist)
 8. [Step 6: SEO Implementation](#step-6-seo-implementation)
-9. [Step 7: Deployment to Vercel](#step-7-deployment-to-vercel)
+9. [Step 7: Deployment to Netlify](#step-7-deployment-to-vercel)
 10. [Step 8: Cold Outreach Strategy](#step-8-cold-outreach-strategy)
 11. [Step 9: Closing & Objection Handling](#step-9-closing--objection-handling)
 12. [Step 10: API Keys & Setup](#step-10-api-keys--setup)
@@ -58,7 +58,7 @@ metadata:
 
 | Tier | Price | Build Time | Includes |
 |------|-------|-----------|----------|
-| **Basic** | $2,500 | 8 hours | Clean design, mobile responsive, 2-3 basic animations, deployed to Vercel |
+| **Basic** | $2,500 | 8 hours | Clean design, mobile responsive, 2-3 basic animations, deployed to Netlify |
 | **Pro** | $5,000 | 16 hours | + GSAP scroll animations, testimonial carousel, video background, parallax effects, Core Web Vitals optimized |
 | **Premium** | $10,000 | 24 hours | + Three.js 3D animations, advanced micro-interactions, custom cursor effects, mesh gradients, grain overlays, full SEO optimization, ongoing support |
 
@@ -95,7 +95,7 @@ Year 1 (Growth):
 5. **Build Remake (Iteration 2)** → Add scroll effects, service cards, parallax
 6. **Build Remake (Iteration 3)** → Testimonials carousel, counter animations, gallery
 7. **Build Remake (Iteration 4)** → Optional: 3D elements, micro-interactions, polish
-8. **Deploy** → GitHub + auto-deploy to Vercel (live preview link)
+8. **Deploy** → GitHub + auto-deploy to Netlify (live preview link)
 9. **Outreach** → Cold email via AgentMail with live preview
 10. **Close** → Follow-up sequence, objection handling, payment collection
 
@@ -408,7 +408,7 @@ Every rebuild must deliver these $10K-quality elements:
 - **JSON-LD schema markup** (LocalBusiness, Service, Review)
 - **OG meta tags** for social sharing
 - **Lazy loading** for images below fold
-- **CDN-ready structure** (for Vercel/Netlify)
+- **CDN-ready structure** (for Netlify/Netlify)
 - **No console errors** (tested in Chrome DevTools)
 - **Works in:** Chrome, Safari, Firefox, Edge
 
@@ -562,7 +562,7 @@ Changes:
    - CSS/JS minification
    - Remove unused libraries
    - Lazy load below-fold images
-   - Set Cache-Control headers (ready for Vercel)
+   - Set Cache-Control headers (ready for Netlify)
 6. SEO implementation:
    - LocalBusiness JSON-LD schema
    - Service schema markup
@@ -585,7 +585,7 @@ Changes:
    - Forms functional (if present)
    - Social share cards test well (OG tags)
 
-Result: Production-ready single HTML file, optimized for Vercel deployment.
+Result: Production-ready single HTML file, optimized for Netlify deployment.
 
 This is ITERATION 4. Ready to deploy and pitch!
 ```
@@ -600,7 +600,7 @@ This is ITERATION 4. Ready to deploy and pitch!
 | **Tailwind (CDN)** | Instant styling, modern utilities, rapid prototyping | Bootstrap | Outdated feel, verbose, bloated CSS |
 | **GSAP** | Industry standard (Netflix, Apple use it), smooth animations | Framer Motion | Requires React, adds complexity |
 | **Three.js (CDN)** | Most popular 3D lib, 20K+ GitHub stars, mature | Babylon.js | Slightly heavier, less community |
-| **Vercel** | Auto-deploy from GitHub, serverless functions, instant scaling | Netlify | Similar, but Vercel has better Next.js integration |
+| **Netlify** | Auto-deploy from GitHub, serverless functions, instant scaling | Netlify | Similar, but Netlify has better Next.js integration |
 
 ---
 
@@ -1033,7 +1033,7 @@ For service-based businesses (dentists, lawyers, salons):
 
 ---
 
-## Step 7: Deployment to Vercel
+## Step 7: Deployment to Netlify
 
 ### GitHub Setup
 
@@ -1057,29 +1057,29 @@ git commit -m "feat: website rebuild for [business-name] - 4-iteration GSAP/scro
 gh repo create [business-name]-website --public --source . --remote origin --push
 ```
 
-### Vercel Deployment
+### Netlify Deployment
 
 **Option 1: Connect via UI**
-1. Go to https://vercel.com
+1. Go to https://netlify.com
 2. Click "Import Project"
 3. Paste GitHub repo URL
-4. Vercel auto-detects, no config needed
+4. Netlify auto-detects, no config needed
 5. Click "Deploy"
-6. Live URL: `https://[business-name]-website.vercel.app`
+6. Live URL: `https://[business-name]-website.netlify.app`
 
 **Option 2: CLI Deploy**
 
 ```bash
-# Install Vercel CLI
+# Install Netlify CLI
 npm install -g vercel
 
 # Deploy from repo
 vercel --prod
-# Vercel auto-detects static HTML
-# Live URL: https://[business-name]-website.vercel.app
+# Netlify auto-detects static HTML
+# Live URL: https://[business-name]-website.netlify.app
 ```
 
-### Vercel Configuration (Optional)
+### Netlify Configuration (Optional)
 
 Create `vercel.json` for advanced options:
 
@@ -1116,9 +1116,9 @@ Create `vercel.json` for advanced options:
 
 ### Live Demo URL
 
-**Format:** `https://[business-name]-website.vercel.app`
+**Format:** `https://[business-name]-website.netlify.app`
 
-**Example:** `https://bright-smile-dental.vercel.app`
+**Example:** `https://bright-smile-dental.netlify.app`
 
 **This is your hook** — send this link in cold emails with "See your new site here" CTA.
 
@@ -1153,7 +1153,7 @@ Subject: I rebuilt your website — here's the link
 Hi [OWNER_NAME],
 
 I spent 2 hours rebuilding your website. Here's the live link:
-https://[business-name]-website.vercel.app
+https://[business-name]-website.netlify.app
 
 What I changed:
 - Modern hero with video/3D animation
@@ -1188,7 +1188,7 @@ I analyzed your website for [BUSINESS_TYPE] best practices, and found 3 major is
 3. Zero animations (looks stuck in 2010, kills trust)
 
 Here's what a rebuild looks like:
-https://[business-name]-website.vercel.app
+https://[business-name]-website.netlify.app
 
 I built this in a weekend. It has:
 - 60% faster load time
@@ -1216,7 +1216,7 @@ I've rebuilt websites for 3 dentists in the Chicago area this month.
 Average result: 27% increase in booking inquiries within 60 days.
 
 Here's one example (real site, live):
-https://[business-name]-website.vercel.app
+https://[business-name]-website.netlify.app
 
 What changed:
 - Modern design (no more 2010 vibes)
@@ -1459,7 +1459,7 @@ The rebuild pays for itself in 1-2 months."
 
 That includes:
 - Full rebuild (4 iterations, approved at each stage)
-- Hosting on Vercel (fast, reliable)
+- Hosting on Netlify (fast, reliable)
 - SEO optimization (local business schema)
 - Ongoing support (3 months free tweaks)
 
@@ -1524,8 +1524,8 @@ Create `.env` file in your project root:
 # Firecrawl (site scraping & analysis)
 FIRECRAWL_API_KEY=your_firecrawl_api_key
 
-# Vercel (deployment)
-VERCEL_TOKEN=your_vercel_token
+# Netlify (deployment)
+NETLIFY_TOKEN=your_vercel_token
 
 # Gemini (image generation for hero visuals)
 GEMINI_API_KEY=your_gemini_api_key
@@ -1554,14 +1554,14 @@ GITHUB_TOKEN=your_github_token
    firecrawl scrape "https://example.com" --format markdown
    ```
 
-#### **Vercel Token**
+#### **Netlify Token**
 
-1. Go to https://vercel.com/account/tokens
+1. Go to https://netlify.com/account/tokens
 2. Click "Create Token"
 3. Copy token (never commit to git)
 4. Add to `.env`:
    ```bash
-   VERCEL_TOKEN=your_token_here
+   NETLIFY_TOKEN=your_token_here
    ```
 5. Test:
    ```bash
@@ -1738,10 +1738,10 @@ Firecrawl extracts:
 *Iteration 3*: Reviews carousel (Google testimonials), gallery of food photos
 *Iteration 4*: 3D pasta model floating in hero, micro-interactions, Core Web Vitals optimized
 
-**Step 8: Deploy to Vercel**
+**Step 8: Deploy to Netlify**
 ```
 GitHub: oh-ashen-one/mamaskitchen-rebuild
-Vercel: https://mamaskitchen-rebuild.vercel.app
+Netlify: https://mamaskitchen-rebuild.netlify.app
 Live in 5 minutes after git push
 ```
 
@@ -1753,7 +1753,7 @@ Subject: I rebuilt your website — here's the link
 Hi Marco,
 
 I spent this weekend rebuilding Mama's Kitchen website.
-See it here: https://mamaskitchen-rebuild.vercel.app
+See it here: https://mamaskitchen-rebuild.netlify.app
 
 What I changed:
 - Hero with video of chef cooking
@@ -1849,7 +1849,7 @@ website-remake-skill/
 **Day 1-2: Understand the system**
 - Read this SKILL.md
 - Study the example rebuilds in EXAMPLES.md
-- Understand Firecrawl + Vercel + GSAP stack
+- Understand Firecrawl + Netlify + GSAP stack
 
 **Day 3-4: Find your first 5 targets**
 - Search for businesses (start with dentists in 1 city)
@@ -1861,7 +1861,7 @@ website-remake-skill/
 - Scrape their existing site (Firecrawl)
 - Extract colors, copy, testimonials
 - Build in Claude Code (4 iterations)
-- Deploy to Vercel
+- Deploy to Netlify
 - Show them live
 
 **Day 7: Close the deal**
@@ -1884,7 +1884,7 @@ website-remake-skill/
 
 1. **Speed** → 1-2 days per rebuild vs 2-3 weeks at agencies
 2. **Cost** → $5K-$10K vs $15K-$30K from agencies  
-3. **Quality** → GSAP/Three.js/Vercel stack is enterprise-grade
+3. **Quality** → GSAP/Three.js/Netlify stack is enterprise-grade
 4. **Automation** → Cold outreach integrated, no manual follow-up work
 5. **Profit margin** → 85-90% profit vs 40-50% for freelancers
 6. **Scalability** → 1 person can do 10-15/month with Claude Code automation
@@ -2011,7 +2011,7 @@ Every rebuilt site must pass Core Web Vitals — Google uses these as ranking si
 
 ```bash
 # Run Lighthouse audit after deploy
-npx lighthouse https://your-site.vercel.app --output=json --quiet | jq '.categories | {performance: .performance.score, seo: .seo.score, accessibility: .accessibility.score}'
+npx lighthouse https://your-site.netlify.app --output=json --quiet | jq '.categories | {performance: .performance.score, seo: .seo.score, accessibility: .accessibility.score}'
 ```
 
 **Targets:**

@@ -18,7 +18,7 @@ firecrawl --status
 ```bash
 # Create .env file
 export AGENTMAIL_API_KEY=your_key_here
-export VERCEL_TOKEN=your_token_here
+export NETLIFY_TOKEN=your_token_here
 ```
 
 ### 3. Find a Target Business
@@ -68,8 +68,8 @@ gh repo create oh-ashen-one/example-dentist-rebuild --public
 # Push to GitHub
 git push origin main
 
-# Connect to Vercel
-# Get live URL: https://example-dentist-rebuild.vercel.app
+# Connect to Netlify
+# Get live URL: https://example-dentist-rebuild.netlify.app
 ```
 
 ### 7. Send Cold Email
@@ -77,7 +77,7 @@ git push origin main
 ./send-email.sh \
   --to owner@example-dentist.com \
   --subject "I rebuilt your website" \
-  --url https://example-dentist-rebuild.vercel.app
+  --url https://example-dentist-rebuild.netlify.app
 ```
 
 ### 8. Close the Deal
@@ -100,7 +100,7 @@ Analyze + Extract Colors/Copy
     ↓
 Build Remake (Claude Code, 4 iterations)
     ↓
-Deploy to Vercel
+Deploy to Netlify
     ↓
 Send Cold Email
     ↓
@@ -120,7 +120,7 @@ Close Deal + Payment
 
 ### Unit Economics
 - **Time per rebuild**: 4-8 hours (Claude Code handles most)
-- **Cost**: $0 (Vercel free, Firecrawl API cheap)
+- **Cost**: $0 (Netlify free, Firecrawl API cheap)
 - **Profit**: 85-95%
 
 ### Revenue Potential
@@ -224,11 +224,11 @@ firecrawl login --api-key YOUR_API_KEY
 # Get key at: https://firecrawl.dev/app/api-keys
 ```
 
-### Vercel (Recommended)
+### Netlify (Recommended)
 ```bash
 npm install -g vercel
 vercel login
-# Connect your GitHub account via Vercel dashboard
+# Connect your GitHub account via Netlify dashboard
 ```
 
 ### AgentMail (For Cold Emails)
@@ -273,9 +273,9 @@ Before you send a cold email, verify:
 - Verify all imports from CDN (GSAP, Three.js)
 - Test in browser DevTools console
 
-**"Deploy to Vercel failed"**
+**"Deploy to Netlify failed"**
 - Check GitHub repo is public/private correctly
-- Verify Vercel has repo access
+- Verify Netlify has repo access
 - Re-authenticate: `vercel login`
 
 **"Cold email not converting"**
@@ -298,7 +298,7 @@ Want to see real examples? Check `examples/` folder:
 ## Next Steps
 
 1. **Read SKILL.md** → Full documentation with all details
-2. **Set up APIs** → Firecrawl, Vercel, AgentMail
+2. **Set up APIs** → Firecrawl, Netlify, AgentMail
 3. **Test on 1 business** → Run full pipeline end-to-end
 4. **Refine prompts** → Customize for your niche
 5. **Start cold emailing** → 5 businesses/week minimum

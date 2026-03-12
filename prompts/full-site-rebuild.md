@@ -384,7 +384,7 @@ TESTING
 |-------|----------|
 | **Animations lag on mobile** | Reduce animation complexity, disable on slow devices |
 | **Images not loading** | Check URLs, compress images, use CDN |
-| **Form not working** | Use Formspree, Netlify Forms, or Vercel edge functions |
+| **Form not working** | Use Formspree, Netlify Forms, or Netlify edge functions |
 | **Mobile layout broken** | Use flexbox/grid, test at 375px, fix overflow |
 | **Slow lighthouse score** | Optimize images, minify CSS/JS, defer non-critical code |
 | **Schema validation errors** | Use JSON-LD validator, check format |
@@ -398,7 +398,7 @@ TESTING
 3. Generate, refine, iterate
 4. Move to Iteration 2 when happy with layout
 5. Continue through Iteration 4
-6. Deploy to Vercel/Netlify
+6. Deploy to Netlify/Netlify
 7. Send cold email with live link
 
 **Time investment: 4-5 hours per site**

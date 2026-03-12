@@ -265,7 +265,7 @@ Example in email:
 
 ```
 I rebuilt your website. See it here:
-→ https://example-business-rebuild.vercel.app ←
+→ https://example-business-rebuild.netlify.app ←
 
 What I changed...
 ```

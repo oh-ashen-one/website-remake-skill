@@ -69,7 +69,7 @@ No animations yet. Pixel-perfect design.
 **Iteration 3** (60 min): Testimonial carousel, counter animations (20+ years, 500+ happy families)
 **Iteration 4** (90 min): Performance optimization, schema markup, dark mode option
 
-### Step 3: Deploy to Vercel
+### Step 3: Deploy to Netlify
 
 ```bash
 cd bright-smile-rebuild
@@ -78,8 +78,8 @@ git add .
 git commit -m "feat: bright smile dental rebuild"
 gh repo create oh-ashen-one/bright-smile-rebuild --public --source=. --push
 
-# Vercel auto-deploys
-# Live URL: https://bright-smile-rebuild.vercel.app
+# Netlify auto-deploys
+# Live URL: https://bright-smile-rebuild.netlify.app
 ```
 
 ### Step 4: Send Cold Email
@@ -93,7 +93,7 @@ Hi Dr. Patel,
 
 I spent Sunday afternoon rebuilding Bright Smile Dental's website.
 
-See it here: https://bright-smile-rebuild.vercel.app
+See it here: https://bright-smile-rebuild.netlify.app
 
 What I changed:
 • Modern hero with family photo + animations
@@ -142,10 +142,10 @@ Result: $5,000 deal, closed in 24 hours.
 ### Step 6: Deployment & Handoff
 
 ```
-1. Transfer domain DNS to Vercel
+1. Transfer domain DNS to Netlify
 2. Deploy to their domain: https://brightsmiledentalpc.com
 3. Transfer GitHub repo ownership
-4. Provide Vercel dashboard access
+4. Provide Netlify dashboard access
 5. Training on updating content
 
 Total time: 8 hours
@@ -454,7 +454,7 @@ Andre: "I'll add 20 from your Instagram. You can add more anytime."
 2. Find 5 qualified targets
 3. Scrape one site with `./scrape-site.sh`
 4. Build the rebuild using `prompts/full-site-rebuild.md`
-5. Deploy to Vercel
+5. Deploy to Netlify
 6. Send cold email using `prompts/outreach-email.md`
 7. Track results
 8. Iterate and scale

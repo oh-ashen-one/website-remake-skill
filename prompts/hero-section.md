@@ -244,6 +244,6 @@ Before sending to client:
 3. Generate artifact
 4. Test on mobile (Chrome DevTools)
 5. Iterate if needed
-6. Deploy to Vercel
+6. Deploy to Netlify
 
 **Time: 15 minutes for hero, 2-3 hours for full site**

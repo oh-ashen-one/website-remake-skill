@@ -82,7 +82,7 @@ cat > ${OUTPUT_FILE} << EOF
     "4. Identify key sections (hero, services, testimonials, contact)",
     "5. Open Claude Code: https://claude.com",
     "6. Use prompts/full-site-rebuild.md to generate remake",
-    "7. Deploy to Vercel or Netlify",
+    "7. Deploy to Netlify or Netlify",
     "8. Send cold email with demo link"
   ]
 }
