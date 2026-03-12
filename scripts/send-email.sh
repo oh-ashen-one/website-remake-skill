@@ -1,12 +1,21 @@
 #!/bin/bash
 # send-email.sh — Send cold outreach email via AgentMail
-# Usage: ./send-email.sh --to owner@example.com --subject "Subject" --url https://preview.com
+# Usage: ./send-email.sh --to owner@example.com --business-name "Joe's Plumbing" --url https://preview.netlify.app
 
 set -e
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$PATH"
+
+# Load AgentMail key from secrets
+SECRETS_DIR="$HOME/.openclaw/workspace/.secrets"
+if [ -f "$SECRETS_DIR/agentmail-api-key.txt" ]; then
+  AGENTMAIL_API_KEY=$(cat "$SECRETS_DIR/agentmail-api-key.txt" | tr -d '[:space:]')
+fi
 
 TO=""
 SUBJECT=""
 URL=""
+BUSINESS_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -18,95 +27,80 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ -z "$TO" ] || [ -z "$SUBJECT" ] || [ -z "$URL" ]; then
-  echo "❌ Usage: ./send-email.sh --to owner@example.com --subject 'Subject' --url https://preview.com"
+if [ -z "$TO" ] || [ -z "$URL" ]; then
+  echo "❌ Usage: ./send-email.sh --to owner@example.com --url https://preview.netlify.app --business-name 'Joe Plumbing'"
   exit 1
 fi
 
-# Check for AgentMail API key
 if [ -z "$AGENTMAIL_API_KEY" ]; then
-  echo "❌ AGENTMAIL_API_KEY not set. Export it:"
-  echo "   export AGENTMAIL_API_KEY=your_key_here"
+  echo "❌ AGENTMAIL_API_KEY not found in $SECRETS_DIR/agentmail-api-key.txt"
   exit 1
 fi
 
-BUSINESS_NAME="${BUSINESS_NAME:-their business}"
+BUSINESS_NAME="${BUSINESS_NAME:-your business}"
+SUBJECT="${SUBJECT:-I rebuilt your website — here's the link}"
 
-echo "📧 Preparing cold email to: $TO"
+# Get the AgentMail inbox to send from
+INBOX_RESPONSE=$(curl -s -X GET "https://api.agentmail.to/v0/inboxes" \
+  -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+  -H "Content-Type: application/json")
+
+FROM_EMAIL=$(echo "$INBOX_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['items'][0]['address'])" 2>/dev/null || echo "")
+
+if [ -z "$FROM_EMAIL" ]; then
+  echo "❌ Could not fetch AgentMail inbox. Check API key."
+  echo "Response: $INBOX_RESPONSE"
+  exit 1
+fi
+
+echo "📧 Sending from: $FROM_EMAIL"
+echo "📧 Sending to: $TO"
+echo "📎 Preview URL: $URL"
 echo ""
 
-# Email body template
-read -r -d '' EMAIL_BODY << 'EOF' || true
-Hi there,
+# Build email body
+EMAIL_BODY="Hi there,
 
-I spent the last couple hours rebuilding your website. Here's the live preview:
+I spent the last couple of hours rebuilding your website. Here's the live preview:
 
-[LINK_PLACEHOLDER]
+$URL
 
 What I changed:
-• Modern hero with animated background
-• Smooth scroll effects on every section
-• Mobile-optimized (your current site doesn't work well on mobile)
-• Professional testimonials carousel
-• Clear call-to-action buttons for bookings/inquiries
+- Modern hero with animated background
+- Smooth scroll effects on every section
+- Mobile-optimized layout (your current site has issues on mobile)
+- Professional testimonials section
+- Clear call-to-action buttons
 
-This isn't a mockup—it's fully functional, hosted live, and ready to go.
+This isn't a mockup — it's fully functional, hosted live, and ready to go.
 
-If you like the direction, I'd love to talk about bringing this to your domain.
+If you like the direction, I'd love to talk about moving this to your domain.
 
 Best,
-[Your Name]
+Andre
 
-P.S. Most design agencies charge $5K-$15K and take 3+ weeks. This is production-ready in days.
-EOF
+P.S. Most agencies charge \$5K–\$15K and take 3+ weeks. This is production-ready in days."
 
-# Replace placeholder
-EMAIL_BODY="${EMAIL_BODY//\[LINK_PLACEHOLDER\]/$URL}"
+# Send via AgentMail
+SEND_RESPONSE=$(curl -s -X POST "https://api.agentmail.to/v0/inboxes/$FROM_EMAIL/messages" \
+  -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"to\": [\"$TO\"],
+    \"subject\": \"$SUBJECT\",
+    \"text\": $(echo "$EMAIL_BODY" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+  }")
 
-echo "📝 Email preview:"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "To: $TO"
-echo "Subject: $SUBJECT"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "$EMAIL_BODY"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
+MSG_ID=$(echo "$SEND_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
 
-read -p "Send this email? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  echo "Sending via AgentMail..."
-  
-  # AgentMail API call (requires AGENTMAIL_API_KEY env var)
-  # For now, we output the curl command (you can pipe to AgentMail later)
-  
-  cat << CURL_CMD
-# Command to send via AgentMail (copy & run):
-curl -X POST https://api.agentmail.to/send \\
-  -H "Authorization: Bearer $AGENTMAIL_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "to": "$TO",
-    "subject": "$SUBJECT",
-    "body": "'"$(echo "$EMAIL_BODY" | jq -Rs .)"'",
-    "track_opens": true,
-    "track_clicks": true
-  }'
-CURL_CMD
-
+if [ -n "$MSG_ID" ]; then
+  echo "✅ Email sent! Message ID: $MSG_ID"
   echo ""
-  echo "✅ Email ready to send!"
-  echo "⏰ Track opens/clicks in AgentMail dashboard"
-  echo "📋 Follow up after 3 days if no response"
-  
+  echo "📋 Follow-up schedule:"
+  echo "  Day 3: 'Did you get a chance to see the new site?'"
+  echo "  Day 7: 'Last chance to lock in this pricing'"
 else
-  echo "❌ Email not sent."
+  echo "❌ Send failed. Response:"
+  echo "$SEND_RESPONSE"
   exit 1
 fi
-
-echo ""
-echo "📋 Follow-up schedule:"
-echo "1. Day 0: Send initial email"
-echo "2. Day 3: 'Did you get a chance to see the new site?'"
-echo "3. Day 7: 'Last chance to lock in this pricing'"
-echo ""
