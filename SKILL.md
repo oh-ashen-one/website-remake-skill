@@ -40,7 +40,9 @@ metadata:
 10. [Step 8: Cold Outreach Strategy](#step-8-cold-outreach-strategy)
 11. [Step 9: Closing & Objection Handling](#step-9-closing--objection-handling)
 12. [Step 10: API Keys & Setup](#step-10-api-keys--setup)
-13. [Success Metrics & Tracking](#success-metrics--tracking)
+13. [Step 11: Fast Build Path (AntiGravity + Stitch)](#step-11-fast-build-path-antigravity--stitch)
+14. [SEO & GEO Optimization](#seo--geo-optimization-step)
+15. [Anthropic Frontend Design + Web Interface Guidelines + SEO Audit](#anthropic-frontend-design--web-interface-guidelines--seo-audit--synthesized)
 
 ---
 
@@ -1613,459 +1615,145 @@ GITHUB_TOKEN=your_github_token
 
 ---
 
-## Success Metrics & Tracking
+## Step 11: Fast Build Path (AntiGravity + Stitch)
 
-### What to Measure
+**When to use:** Speed matters over control, or you're cloning a niche (same business type, different city/brand).
+**When NOT to use:** Client needs custom backend, complex logic, or absolute design control → use Step 3 (Claude Code) instead.
 
-**Outreach metrics:**
-- Emails sent per day/week
-- Open rate (target: 25-35%)
-- Click-through rate (target: 10-15%)
-- Reply rate (target: 3-5%)
+> Full background on Jack Roberts' method, frameworks, and anti-slop rules: `references/jack-roberts-method.md`
 
-**Sales metrics:**
-- Demo meetings scheduled (target: 10% of opens)
-- Deal closure rate (target: 50%+ of demos)
-- Average deal value (track: $2.5K, $5K, $10K tiers)
-- Sales cycle (typical: 3-7 days)
+---
 
-**Revenue metrics:**
-- Monthly recurring revenue (track by customer)
-- Customer acquisition cost (CAC) = (emails × cost) / closes
-- Lifetime value (LTV) = avg deal value (usually 1-time, no recurring)
-- Profit margin (should be 85-90%)
+### Tool Setup
 
-### Tracking Template
+| Tool | Purpose | URL |
+|------|---------|-----|
+| AntiGravity | Visual website builder (Google) | antigravity.dev |
+| Stitch | Design agent for brand variations | stitch.withgoogle.com |
+| Gemini 3 | AI engine for copy, design systems, validation | gemini.google.com |
+| Spline | 3D animation, no-code, embeds in AntiGravity | spline.design |
 
-Create a spreadsheet:
+---
 
-| Date | Name | Business | Email | Opened | Clicked | Met | Demo | Closed | Amount | Notes |
-|------|------|----------|-------|--------|---------|-----|------|--------|--------|-------|
-| 3/12 | John Smith | Bright Smile Dental | john@smile.com | ✓ | ✓ | ✓ | ✓ | ✓ | $5,000 | Pro package |
-| 3/12 | Sarah Jones | Jones Law | sarah@jones.com | ✓ | ✗ | - | - | - | - | No click-through |
-| 3/13 | Mike Johnson | Johnson Plumbing | mike@plumbing.com | ✗ | - | - | - | - | - | Email bounced |
+### Workflow: First Client in a Niche (2–3 days)
 
-**KPIs to monitor:**
-
+**Phase 1: Brand Brief (30 min)**
 ```
-% Open Rate = Opens / Emails Sent
-  Target: 25-35%
-  If below: Test new subject lines
+Inputs needed:
+- Business name + industry
+- Primary color (from scrape-site.sh output)
+- Logo URL or file
+- 3 key services
+- Target customer (age, location, problem)
+- Desired tone: professional / friendly / luxury / urgent
 
-% Click Rate = Clicks / Opens
-  Target: 50%+ 
-  If below: Improve email copy, make CTA clearer
-
-% Meeting Rate = Meetings / Clicks
-  Target: 10-15%
-  If below: Demo site might not be impressive enough, iterate design
-
-% Close Rate = Deals / Meetings
-  Target: 50%+
-  If below: Improve sales call, better objection handling
-
-Revenue per Day = Total Revenue / Days Active
-  Target: Ramp from $500/day → $5K/day as volume increases
-  
-Monthly Revenue = Revenue per Day × 20 (working days)
-  Month 1: ~$10K (slow, learning)
-  Month 3: ~$30K-$50K (dialed in)
-  Month 6: ~$60K-$100K+ (system working)
+Prompt for Gemini 3:
+"I'm rebuilding a [industry] website for [business name] in [city].
+Brand colors: [hex]. Tone: [tone]. Target customer: [customer].
+Generate: (1) complete design system (colors, fonts, spacing), (2) hero headline + subheadline,
+(3) 3 benefit bullets, (4) CTA text, (5) FAQ (5 questions), (6) social proof angle."
 ```
 
-### Monthly Reporting
+**Phase 2: Build in AntiGravity (4–8 hours)**
 
-Track in a spreadsheet or Notion:
+1. Open AntiGravity → New Project → Blank or pick a base template
+2. Load Gemini's design system: paste colors/fonts into AntiGravity theme settings
+3. Build these sections in order:
+   - **Hero**: Full-screen, headline from Gemini, CTA button, background (video or Spline 3D)
+   - **Social proof bar**: logos or "trusted by X businesses"
+   - **Services**: 3-column card grid, icons, animate on scroll
+   - **Testimonials**: carousel with star ratings (extract from Google with scrape-site.sh)
+   - **CTA section**: Book/call/contact, prominent button
+   - **Footer**: address, phone, hours, links
+4. Apply GSAP scroll animations to cards and section reveals (AntiGravity has built-in GSAP support)
+5. Add Spline 3D to hero if Tier 2+:
+   - Open spline.design → create or pick a 3D scene → Export → "Embed on web"
+   - Copy embed code → paste into AntiGravity hero section HTML embed block
 
-```
-=== MARCH REPORT ===
+**Phase 3: Mobile Pass (1 hour)**
+- Switch to mobile view in AntiGravity
+- Stack columns to single-column
+- Increase tap target sizes to ≥44px
+- Test hero headline font size (min 32px on mobile)
+- Check video/Spline loads without lag (fallback to static image if needed)
 
-Outreach:
-- Emails sent: 200
-- Opens: 60 (30%)
-- Clicks: 30 (50% of opens)
-- Meetings: 3 (10% of clicks)
-- Deals closed: 1.5 (50% of meetings)
-
-Revenue:
-- Total revenue: $7,500 (1 × $5K + 0.5 × $5K pending)
-- CAC: $50 (200 emails × $0.25 / 1.5 closes)
-- Profit margin: 90%
-
-Performance:
-- Top subject line: "I rebuilt your website" (35% open)
-- Best niche: Dentists (60% close rate)
-- Average deal size: $5K (trending up to $7.5K in March)
-- Sales cycle: 4 days (very fast)
-
-Next month goals:
-- 300 emails (increase volume)
-- 40% open rate (test new copy)
-- 2 deals minimum (pipeline filling up)
-- $15K revenue target
+**Phase 4: Deploy (15 min)**
+```bash
+# In AntiGravity: Publish → Connect GitHub → auto-push to repo
+# Then:
+netlify login
+netlify init   # link to repo
+netlify deploy --prod
+# Live URL → send in cold email
 ```
 
 ---
 
-## Complete Workflow Example
+### Workflow: Cloning for Same-Niche Repeat (4–6 hours per client)
 
-### Scenario: Rebuild a Restaurant's Website
+Once you have one excellent template in a niche (e.g., dentist in Chicago):
 
-**Step 1: Find Target**
 ```
-Search: "restaurant chicago open now"
-Found: "Mama's Italian Kitchen" — https://mamaskitchen.com
-Reviews: 4.6 stars, 89 reviews (qualified!)
-Website: Looks like 2005 design (qualified!)
-Contact: Found phone: (312) 555-0123, email: contact@mamaskitchen.com
-```
-
-**Step 2: Analyze & Scrape**
-```
-Firecrawl extracts:
-- Colors: #8B4513 (brown), #FFD700 (gold), #FFF (white)
-- Copy: "Authentic Italian since 1985"
-- Services: Dining In, Takeout, Delivery, Private Events
-- Testimonials: 5 Google reviews mentioned
-- Issues: No animations, broken mobile, slow (5.2s load)
-- Recommendation: Hero video (chef cooking), GSAP scroll effects
+In AntiGravity:
+1. Duplicate master project → rename to new client
+2. Open Stitch → "Generate variation" → upload new brand brief:
+   - New business name, logo, colors, city, testimonials
+3. Stitch regenerates: typography, palette, hero copy, service names, CTA text
+4. Review + approve each section (spot-check layout, fix anything off)
+5. Deploy to Netlify → new subdomain per client
 ```
 
-**Step 3-7: Build in Claude Code (4 iterations)**
+**What changes automatically:** logo, colors, fonts, copy, testimonials, service names
+**What you fix manually:** any layout breaks, custom photos, contact info in footer
 
-*Iteration 1*: Hero with video background (chef preparing dish), GSAP headline animation
-*Iteration 2*: Menu cards animate on scroll, parallax background
-*Iteration 3*: Reviews carousel (Google testimonials), gallery of food photos
-*Iteration 4*: 3D pasta model floating in hero, micro-interactions, Core Web Vitals optimized
+---
 
-**Step 8: Deploy to Netlify**
+### Gemini 3 Prompts (Copy-Paste Ready)
+
+**Design system generation:**
 ```
-GitHub: oh-ashen-one/mamaskitchen-rebuild
-Netlify: https://mamaskitchen-rebuild.netlify.app
-Live in 5 minutes after git push
-```
-
-**Step 9: Cold Outreach**
-```
-To: contact@mamaskitchen.com
-Subject: I rebuilt your website — here's the link
-
-Hi Marco,
-
-I spent this weekend rebuilding Mama's Kitchen website.
-See it here: https://mamaskitchen-rebuild.netlify.app
-
-What I changed:
-- Hero with video of chef cooking
-- Smooth scroll animations on menu items
-- Reviews carousel (from your Google reviews)
-- Mobile works perfectly now (yours crashes on phone)
-- Optimized for Google search (better visibility)
-
-This isn't a mockup—it's live and ready to go.
-
-If you like it, let's talk pricing. Usually $5K for this level of quality.
-
-Talk soon,
-[YOUR_NAME]
-(312) 555-1234
+Business: [name], Industry: [industry], City: [city]
+Primary color: [hex from scrape], Tone: [professional/warm/luxury]
+Generate a complete design system:
+- Primary + secondary + accent hex colors (60/30/10 rule)
+- Display font + body font (NOT Inter, Roboto, or Arial)
+- Base font size + heading scale
+- Border radius (pick one: sharp 0px / soft 8px / round 16px)
+- Button style (filled / outlined / ghost)
 ```
 
-**Step 10: Follow-up & Close**
+**Hero copy:**
 ```
-Day 3: "Did you get a chance to see the new site?"
-Day 7: "Last chance to lock in early-bird pricing"
-Day 10: Call Marco directly if he's showing interest
+Business: [name] — [one-line description]
+Target customer: [customer type] with problem: [problem]
+Write: (1) H1 headline (max 8 words, outcome-focused), (2) subheadline (max 20 words),
+(3) primary CTA button text (2-4 words), (4) secondary CTA (optional)
+Tone: [tone]. No generic phrases like "Welcome to" or "We are".
+```
 
-Expected: 50% chance of close based on metrics
-Expected deal: $5K-$7.5K
-Timeline: 1-2 weeks to payment
-
-ROI: ~90% profit after all costs
+**Cold email with live link:**
+```
+Write a cold email for a [industry] owner.
+My rebuilt version of their site is live at: [URL]
+Key improvements made: [list 3 specific improvements from scrape output]
+Keep it under 150 words. No fluff. Lead with the link.
+Subject line + email body. Use [SENDER_NAME] as signature.
 ```
 
 ---
 
-## Tips for $10K Quality Results
+### Decision Matrix: AntiGravity vs Claude Code
+
+| Situation | Use AntiGravity + Stitch | Use Claude Code |
+|-----------|--------------------------|-----------------|
+| First build in a niche | ✅ Build the master template | — |
+| 2nd–10th client in same niche | ✅ Clone via Stitch | — |
+| Custom animations (GSAP complex) | — | ✅ |
+| Backend / API integration | — | ✅ |
+| Client needs source code | — | ✅ |
+| Speed is the priority | ✅ | — |
+| Absolute design control | — | ✅ |
 
-1. **Always iterate 4x minimum** → Don't ship first drafts. Clients expect polish.
-2. **Use real testimonials** → Extract from Google/Yelp (with permission). Fake testimonials kill credibility.
-3. **Make CTAs dead obvious** → Button should be 40-50% of hero section.
-4. **Mobile first** → 60-70% of prospects browse on phone. Test extensively.
-5. **Video backgrounds are magic** → Users don't care about 3D if the video is better. Prioritize.
-6. **Optimize images** → TinyPNG + ImageOptim before deploy. Every KB matters for LCP.
-7. **Test on real phones** → Use actual iPhone + Android. Don't just use DevTools.
-8. **Ask about goals** → "What does success look like?" (bookings? calls? leads?). Measure results.
-9. **Charge upfront** → 50% deposit before starting. Reduces flakes.
-10. **Deliver surprises** → Add something extra (custom 3D animation, animated logo). Creates WOW.
-
----
-
-## Common Mistakes to Avoid
-
-❌ **Building to scale too fast** → Start with 5 high-quality rebuilds. Nail the process. Then scale.
-❌ **Using templates** → Every site looks same. Custom = premium = sells.
-❌ **Underselling** → Don't charge $2K for $10K work. Confidence is half the sale.
-❌ **Skipping mobile testing** → Mobile broken = deal breaker.
-❌ **Not tracking metrics** → Can't improve if you don't measure.
-❌ **Overengineering animations** → More ≠ better. 3-5 animations per section max.
-❌ **Ignoring SEO** → Schema markup + Core Web Vitals = huge competitive advantage.
-❌ **Cold emailing without warm-up** → Domain reputation matters. Warm up sending domain first.
-❌ **Not handling objections** → "It's too expensive" is predictable. Have responses ready.
-❌ **Giving up after 3 rejections** → Takes 7-10 touches to convert. Persistence pays.
-
----
-
-## Files in This Repo
-
-```
-website-remake-skill/
-├── SKILL.md (this master file)
-├── ABOUT.md (business model deep-dive)
-├── README.md (quick start)
-├── EXAMPLES.md (5 full rebuild examples)
-├── prompts/
-│   ├── hero-section.md (hero animation prompt)
-│   ├── full-site-rebuild.md (4-iteration framework)
-│   └── outreach-email.md (cold email templates)
-├── scripts/
-│   ├── find-targets.sh (search for businesses)
-│   ├── scrape-site.sh (analyze existing site)
-│   └── send-email.sh (AgentMail integration)
-└── references/
-    ├── awwwards-design.md (premium animation techniques)
-    ├── anti-slop-design.md (what NOT to do)
-    ├── ahrefs-seo.md (SEO analysis)
-    ├── apify-scraper.md (web scraping)
-    ├── app-builder.md (deployment)
-    ├── agentscale-deploy.md (alternative hosting)
-    └── [11 other skills synthesized]
-```
-
----
-
-## Getting Started (Next 7 Days)
-
-**Day 1-2: Understand the system**
-- Read this SKILL.md
-- Study the example rebuilds in EXAMPLES.md
-- Understand Firecrawl + Netlify + GSAP stack
-
-**Day 3-4: Find your first 5 targets**
-- Search for businesses (start with dentists in 1 city)
-- Qualify using the rubric (aim for 70+ points)
-- Reach out to 5 high-confidence prospects
-- Get 1-2 demos scheduled
-
-**Day 5-6: Build your first rebuild**
-- Scrape their existing site (Firecrawl)
-- Extract colors, copy, testimonials
-- Build in Claude Code (4 iterations)
-- Deploy to Netlify
-- Show them live
-
-**Day 7: Close the deal**
-- Address objections (use templates above)
-- Get 50% deposit
-- Schedule handoff call
-- Start work on rebuild #2
-
-**Month 1 goal:**
-- 3-5 rebuilds in pipeline
-- 1-2 deals closed
-- $5K-$15K revenue
-- Refined process & prompts
-
----
-
-## Key Differentiators
-
-**Why this skill beats competitors:**
-
-1. **Speed** → 1-2 days per rebuild vs 2-3 weeks at agencies
-2. **Cost** → $5K-$10K vs $15K-$30K from agencies  
-3. **Quality** → GSAP/Three.js/Netlify stack is enterprise-grade
-4. **Automation** → Cold outreach integrated, no manual follow-up work
-5. **Profit margin** → 85-90% profit vs 40-50% for freelancers
-6. **Scalability** → 1 person can do 10-15/month with Claude Code automation
-
----
-
-## Final Notes
-
-This is a **real, profitable system**. I've validated:
-- Market demand (60%+ of businesses have outdated sites)
-- Willingness to pay ($5K-$10K is standard for web design)
-- Build speed (Claude Code + GSAP = 1-2 days per site)
-- Close rate (50%+ when demo is good)
-
-**Expected Year 1 Revenue:** $150K-$250K at 85% profit
-
-**Your job:** Execute the system, refine prompts, track metrics, iterate on what works.
-
-Good luck. Ship it. 🚀
-
----
-
----
-
-## Jack Roberts Method — Techniques From His Channel
-
-Jack Roberts has built a 7-figure AI automation business by mastering a specific workflow that combines Google's emerging AI tools (AntiGravity, Stitch, Gemini 3, Spline, Nano Banana 2) with a proven sales system. Across 12 YouTube videos documenting his process, several high-leverage techniques emerge that aren't captured in the generic website rebuild skill yet.
-
-### The AntiGravity + Stitch Cloning System
-
-The most game-changing innovation Jack has discovered is what he calls the "anti-gravity cloning system." Rather than rebuilding each website from scratch, AntiGravity (Google's visual web builder) combined with Stitch (Google's design agent) allows you to take any existing website template and generate infinite variations for different brands automatically. This isn't just a faster rebuild process—it's a completely different business model. Jack describes it as taking "any website and making infinite copies of that exact same website for different brands," with the system automatically changing logos, color schemes, copy, and even layout to match brand guidelines. This means once you've built one beautiful website template, you can generate 10, 50, or 100 variations in hours rather than weeks. The system intelligently adapts typography, color palettes, imagery, and messaging while maintaining the core structure and conversion elements. This is the true competitive advantage—not in building slower better than agencies, but in building faster than anyone else through systematic duplication and AI-driven customization.
-
-Implementing this requires: (1) Building one exceptional website template in AntiGravity that has proven conversion mechanics, (2) Documenting the brand assets systematically (color palette, fonts, tone, industry context), (3) Using Stitch's design agent capabilities to feed the system brand brief + existing template, (4) Letting Stitch generate variations automatically, (5) Reviewing and shipping each variation. Jack's revenue model depends entirely on this leverage—the first client build takes 2-3 days, but each subsequent client in that niche takes 4-6 hours using the cloning system.
-
-### Gemini 3 as the Core Engine
-
-Unlike earlier approaches that relied on Claude Code + GSAP animations, Jack's newer videos (Yn2v1Hdrf4Y, 8yh6XeUUU38, qJsDfREUwDs, b54A-eckw5g) emphasize Gemini 3 as the foundational AI engine for the entire build process. Gemini 3's multimodal capabilities and speed ("what used to take hours in minutes") have essentially replaced the manual Claude Code iteration process. Jack uses Gemini 3 to:
-
-1. **Ideate and validate** — Ask Gemini for landing page frameworks, A/B copy variants, psychology-driven CTAs
-2. **Design systems generation** — Feed Gemini 3 a brand brief and get a complete design system (colors, typography, spacing, components) that's coherent and on-brand
-3. **Rapid prototyping** — Build visual mockups within AntiGravity using Gemini's suggestions for layout, hierarchy, and interaction patterns
-4. **Copy generation and refinement** — Headlines, CTAs, testimonial angles, FAQ sections—all generated by Gemini with specific tone/audience parameters
-5. **A/B testing frameworks** — Gemini generates multiple copy, design, and CTA variations automatically
-
-The shift here is philosophical: instead of a 4-iteration manual process with Claude Code, you're engaging Gemini 3 as an interactive design partner that understands conversion psychology, SaaS frameworks (his "PAGES" and "SAS" frameworks), and brand consistency. Jack's sales pitch has evolved from "I'll iterate your site 4 times" to "Gemini 3 makes this incredibly easier and way faster—what used to take weeks takes days."
-
-### Spline for 3D Animation (New Skill)
-
-In the "AntiGravity + Spline = INSANE 3D Websites" video (nhibi9TRgNc), Jack reveals that you can now connect Spline (3D design tool) directly to AntiGravity without any code. This is a "brand new secret skill" that lets him build jaw-dropping 3D animated websites. Instead of using Three.js (which requires JavaScript knowledge), Spline handles all 3D rendering, and AntiGravity embeds it seamlessly. Jack's workflow: (1) Design 3D element in Spline (rotating product, floating shapes, morphing logo, etc.), (2) Export as web-embedded component, (3) Drop into AntiGravity hero/section, (4) Let Spline handle performance optimization and animation loops. This dramatically lowers the barrier to premium 3D effects—no code required, visual design only. The result is websites with "jaw-droppingly beautiful" 3D-animated heroes that immediately signal premium quality and command higher prices.
-
-### The Five-Element Website Framework (PAGES)
-
-Jack's "PAGES" framework (mentioned in UR09nuSxGio) breaks down the essential structure for converting websites:
-
-- **P = Purpose**: Every website needs a specific job. "A website with no purpose is like a blank shop." Define the conversion goal first (book appointment, join email list, buy product, schedule demo), then design backwards from that goal.
-- **A = Animation**: Hero section must have scroll-stopping animation (video background, parallax, 3D element). Scroll effects on all major sections keep engagement high.
-- **G = Gorgeous Design**: Coherent color hierarchy, modern typography, whitespace, asymmetric layouts. Jack emphasizes that "beautiful design" drives conversion 20-30% higher than plain layouts.
-- **E = Engagement/Experience**: Every page must have 2-3 interactive moments (hover effects, counter animations, carousel, etc.) to keep viewers engaged and increase dwell time.
-- **S = Sections**: Clear page structure (hero, value prop, social proof, CTA, footer) with staggered reveals and scroll-triggered animations.
-
-This framework is simpler than the "PAGES" in the existing skill, focusing on the essential 5 elements that research shows drive conversions, rather than a full page structure.
-
-### The SAS Framework (Profitable SaaS Websites)
-
-In Yn2v1Hdrf4Y, Jack outlines a four-step system for building profitable SaaS websites that actually make money (not just look good):
-
-1. **Validate the idea** — Before building, validate that the problem is real, the market wants it, and people will pay. Use Gemini 3 to run surveys, analyze competitors, pressure-test the value prop.
-2. **Build a beautiful website** — The landing page must convert. This uses the PAGES framework above plus specific SaaS psychology: "What problem do I solve?" (above fold), "Why should you believe me?" (social proof), "How do I get started?" (clear CTA), "What if I'm not sure?" (FAQ), "What's it cost?" (pricing or lead magnet).
-3. **Add the app/product** — The website is just the front door. Build the backend (using AntiGravity's integrated backend capabilities or a simple API) so users can actually use/buy the product.
-4. **Automate everything** — Use Gemini 3 + integrations (Zapier, Make, n8n) to automate follow-ups, onboarding, invoicing, so the business runs without manual work.
-
-Jack has built and sold SaaS products with 60,000+ customers, so this framework comes from real experience: beautiful landing page alone doesn't make money if the product is weak or the backend is broken.
-
-### Nano Banana 2 for Frontend Speed
-
-In TZUTe7s11-I ("Claude Code + Nano Banana 2 = Insane $10,000 Websites"), Jack mentions Nano Banana 2 as a speed multiplier for building premium websites "in minutes" with no coding. The context suggests Nano Banana 2 is either a template system, a code-generation model, or an integration layer that makes deploying AntiGravity sites to production trivial. Combined with Claude Code (Anthropic's IDE), this workflow becomes: (1) Describe site in text, (2) Claude Code generates boilerplate, (3) Nano Banana 2 optimizes for production (performance, SEO, mobile), (4) Deploy instantly. This reduces build time from days to hours.
-
-### The Pricing & Sales Strategy
-
-Across all videos, Jack's pricing strategy remains consistent but shows sophistication in value packaging:
-
-- **Tier 1 ($2.5K-$5K)**: "Pro" websites with scroll animations, testimonials carousel, basic animations. Target: small local businesses, coaches, consultants.
-- **Tier 2 ($5K-$8K)**: Premium with advanced GSAP effects, 3D elements (Spline), custom interactions, full SEO. Target: agencies, service businesses, startups.
-- **Tier 3 ($10K+)**: Ultimate with full AI backend integration, design system, ongoing support, automation. Target: SaaS founders, serious e-commerce, high-revenue businesses.
-
-Sales approach (from cold emails in wr0bvxVyPEs):
-- Lead with the "before/after" demo link (live website, not mockup) — this removes all skepticism and lets the prospect see exactly what they'll get
-- Focus on outcome, not features: "27% increase in bookings," "60% faster load time," "Mobile works perfectly now"
-- Use social proof aggressively: "3 dentists in Chicago just rebuilt theirs, all seeing 20-50% more inquiries"
-- Close on urgency: "I have 2 spots left this month" — genuine scarcity, not fake
-
-### The "Anti-Slop" Design Philosophy
-
-Jack is adamant that AI-generated websites look like AI slop if you don't follow specific design rules. His anti-slop checklist (from multiple videos):
-
-- **Never**: Use generic fonts (Inter, Roboto, Arial), purple gradients, uniform rounded corners, center-only layouts
-- **Always**: Pick one extreme design direction (brutalism, minimalism, luxury, retro, editorial), use distinctive font pairing, create clear color hierarchy (60/30/10 rule), build asymmetric layouts with overlapping elements, apply staggered reveals, add unexpected interactions
-
-Key quote: "Unlike the AI slop you see in other places, this looks premium" (TZUTe7s11-I). Jack's entire positioning is that most AI website builders produce generic-looking sites, but combining AntiGravity + Gemini 3 + proper design principles + his frameworks produces sites that would cost $10K-$30K from traditional agencies.
-
-### Client Acquisition Through "Vibe Design"
-
-Multiple videos emphasize "vibecoding" and "vibe design" as Jack's method for rapid client acquisition. This appears to be shorthand for: rapid prototyping based on gut feel about what clients want, then iterating on feedback. The workflow: (1) See a prospective client's current website, (2) Spend 2-3 hours rebuilding it better using AntiGravity + Gemini 3, (3) Send cold email with live demo link, (4) If they engage, move to paid iteration. This is different from the skill's "4-iteration" process—Jack's version is more like "MVP demo → feedback → refinement," trusting that Gemini 3 and AntiGravity are powerful enough to get close on the first pass.
-
-### The Actual Time/Cost Economics (New Data)
-
-From the transcripts, Jack reveals actual build times:
-
-- Hero section + scroll animations: 2-4 hours
-- Full 5-section website (hero, services, testimonials, about, CTA): 8-16 hours
-- With 3D (Spline): Add 2-4 hours
-- With backend/app integration: Add 4-8 hours
-- "Vibe design first pass": 2-3 hours
-- Using cloning system: 4-6 hours per variation
-
-Cost structure: Since Jack is now running a 7-figure business, his unit economics suggest he's either (a) doing very few high-ticket deals ($15K-$50K SaaS website + ongoing support), or (b) doing moderate volume at $8K-$10K average with ~85% profit margin after tools/hosting.
-
-### Exact Workflow Sequence (Jack's End-to-End Process)
-
-From wr0bvxVyPEs and haBy-Rhkl4g (Stitch + AntiGravity integration), the complete Jack Roberts workflow is:
-
-1. **Find target**: Search local businesses, identify outdated websites, cold email with demo link
-2. **Build MVP**: Use AntiGravity + Gemini 3 to rebuild their site in 2-3 days, leverage cloning system if same niche
-3. **Deploy**: Netlify (or built-in AntiGravity hosting) for instant live demo
-4. **Sell**: Send live link + copy about specific improvements (mobile fixed, animations added, Core Web Vitals optimized)
-5. **Iterate if engaged**: Use Gemini 3 to refine copy, design, or add features based on feedback
-6. **Close**: Get 50% deposit, finalize in 5-7 days, deploy to their domain
-7. **Optimize**: Optional—add SEO schema, design system documentation, training
-
-The entire process, from cold email to deposit, typically takes 1-2 weeks. The secret is that most of the work happens before contact—Jack's cloning system means he's not building from zero for every prospect.
-
-### Tools Jack Actually Uses (Confirmed From Videos)
-
-- **AntiGravity**: Primary build tool (Google's visual website builder)
-- **Stitch**: Design agent (Google), integrates with AntiGravity for automated design variations
-- **Gemini 3**: AI engine for copy, design systems, frameworks, validation
-- **Spline**: 3D animation tool, embeds directly into AntiGravity (no code)
-- **Netlify**: Deployment + hosting
-- **Claude Code**: For complex integrations or backend work (secondary, not primary)
-- **Nano Banana 2**: Unknown/emerging tool, possibly for performance optimization or template generation
-
-These are different from the existing skill's stack (Claude Code + GSAP + Three.js). Jack's tooling is more "no-code visual-first" while the skill emphasizes "code-first with Claude."
-
-### The Language/Messaging Shift
-
-Jack's most recent videos (2024-2025) subtly shift from "how to code" to "how to build," acknowledging that most people don't want to code at all. Quotes from recent videos:
-
-- "even if you've never coded before" (TZUTe7s11-I)
-- "without any code" (quVoGwHZdYI)
-- "no coding experience" (haBy-Rhkl4g, UR09nuSxGio)
-
-This is a marketing shift—the target customer isn't developers anymore, it's entrepreneurs/business owners who want beautiful websites without technical knowledge.
-
-### Integration With Existing Skill
-
-The website-remake-skill should absorb Jack's methods by:
-
-1. **Replacing Step 3 (Building) with AntiGravity + Cloning system** — For first-time builders or when speed matters most, use AntiGravity's visual editor instead of Claude Code. For cloned/variation projects, leverage the cloning system for 10x speed.
-
-2. **Updating frameworks** — Replace generic "sections" with Jack's PAGES framework (purpose, animation, gorgeous, engagement, sections) and SAS framework for SaaS specifically.
-
-3. **Adding Spline** — For 3D animated hero sections, integrate Spline without code instead of Three.js.
-
-4. **Emphasizing Gemini 3** — For copy, design systems, and validation, Gemini 3 is as important as Claude Code.
-
-5. **Updating pitch/sales** — Emphasize "live demo link" over "mockup," focus on speed ("in 2 days"), emphasize the cloning advantage.
-
-The two approaches (Claude Code native builds vs. AntiGravity visual) serve different purposes:
-- **Claude Code**: For highly custom integrations, complex logic, absolute control. Slower, more flexibility.
-- **AntiGravity + Stitch + Cloning**: For speed, simplicity, replication across similar clients. Faster, less control, but leverageable.
-
-Choose based on client needs and your process maturity.
-
----
-
-**Master SKILL.md version 2.0.0 + Jack Roberts Methods**
-*Last updated: March 12, 2026*
-*Maintained by: Andre of Astora*
-*Synthesized from Jack Roberts' 12 YouTube videos on $10K website building*
-
----
 
 ## SEO & GEO Optimization Step
 
