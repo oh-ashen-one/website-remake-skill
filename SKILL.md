@@ -2284,7 +2284,7 @@ Use this when selling the upgrade or justifying the $10K price:
 
 ---
 
-## Anthropic Frontend Design + Vercel Web Guidelines + SEO Audit — Synthesized
+## Anthropic Frontend Design + Web Interface Guidelines + SEO Audit — Synthesized
 
 ### The Core Design Philosophy (from Anthropic's frontend-design skill)
 
@@ -2296,7 +2296,7 @@ Color must follow the dominant + sharp accent rule: pick one dominant color and 
 
 For motion: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Prioritize CSS-only animations for performance. Use scroll-triggering and hover states that surprise. The bar for "good enough" is: does someone stop scrolling and say "how did they do that?"
 
-**Vercel Web Interface Guidelines checklist** (run this after every build):
+**Web Interface Guidelines checklist** (run this after every build):
 - Fetch the live guidelines from `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md` and run a compliance audit against every page
 - Check: tap target sizes ≥ 44px, color contrast ≥ 4.5:1, viewport meta tag present, no horizontal scroll on mobile, all interactive elements keyboard accessible
 - Check: images have alt text, headings follow logical hierarchy, form labels present, error messages descriptive

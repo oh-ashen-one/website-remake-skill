@@ -16,6 +16,7 @@ TO=""
 SUBJECT=""
 URL=""
 BUSINESS_NAME=""
+SENDER_NAME="${SENDER_NAME:-}"  # can be set via env var SENDER_NAME
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -23,14 +24,19 @@ while [[ $# -gt 0 ]]; do
     --subject) SUBJECT="$2"; shift 2 ;;
     --url) URL="$2"; shift 2 ;;
     --business-name) BUSINESS_NAME="$2"; shift 2 ;;
+    --sender-name) SENDER_NAME="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 if [ -z "$TO" ] || [ -z "$URL" ]; then
-  echo "❌ Usage: ./send-email.sh --to owner@example.com --url https://preview.netlify.app --business-name 'Joe Plumbing'"
+  echo "❌ Usage: ./send-email.sh --to owner@example.com --url https://preview.netlify.app --business-name 'Joe Plumbing' --sender-name 'Alex'"
+  echo "   Or set SENDER_NAME env var for default."
   exit 1
 fi
+
+# Resolve sender name: --sender-name flag > SENDER_NAME env > fallback
+SENDER_NAME="${SENDER_NAME:-${AGENT_SENDER_NAME:-Your Name}}"
 
 if [ -z "$AGENTMAIL_API_KEY" ]; then
   echo "❌ AGENTMAIL_API_KEY not found in $SECRETS_DIR/agentmail-api-key.txt"
@@ -77,7 +83,7 @@ This isn't a mockup — it's fully functional, hosted live, and ready to go.
 If you like the direction, I'd love to talk about moving this to your domain.
 
 Best,
-Andre
+$SENDER_NAME
 
 P.S. Most agencies charge \$5K–\$15K and take 3+ weeks. This is production-ready in days."
 

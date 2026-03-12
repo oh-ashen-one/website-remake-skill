@@ -31,7 +31,7 @@ A complete, production-ready OpenClaw skill that automates finding businesses wi
 
 ```
 Find Target → Scrape Site → Build Remake → Deploy → Cold Email → Follow-Up → Close Deal
-  (web_search)  (Firecrawl)  (Claude Code)  (Vercel)  (AgentMail)   (3 emails)  ($5K-$10K)
+  (web_search)  (Firecrawl)  (Claude Code)  (Netlify)  (AgentMail)   (3 emails)  ($5K-$10K)
 ```
 
 ## 📋 Key Features
@@ -42,7 +42,7 @@ Find Target → Scrape Site → Build Remake → Deploy → Cold Email → Follo
 ✅ **Automation scripts** (find targets, scrape, analyze, send emails)
 ✅ **Real examples** (dentist, law firm, restaurant, realtor, salon)
 ✅ **Pricing tiers** ($2.5K-$10K, choose your model)
-✅ **Success metrics** (100% conversion rate in examples)
+✅ **Success metrics** (real-world example results included)
 
 ## 📚 Documentation
 
@@ -60,7 +60,7 @@ Find Target → Scrape Site → Build Remake → Deploy → Cold Email → Follo
 - **Website builder**: Claude Code (Sonnet 4.6)
 - **Animations**: GSAP (scroll effects, parallax)
 - **3D**: Three.js (optional, for premium tier)
-- **Hosting**: Vercel (free, auto-deploy from GitHub)
+- **Hosting**: Netlify (free, auto-deploy from GitHub)
 - **Cold email**: AgentMail API ($0.05-0.10 per email)
 - **Design**: Tailwind CSS (utility-first, fast)
 
@@ -116,24 +116,24 @@ export AGENTMAIL_API_KEY=your_key_here
 # Go to https://claude.com → Claude Code
 # Use prompts/full-site-rebuild.md
 
-# 6. Deploy to Vercel
+# 6. Deploy to Netlify
 git push origin main
-# Vercel auto-deploys: https://rebuild.vercel.app
+# Netlify auto-deploys: https://rebuild.netlify.app
 
 # 7. Send cold email
-./scripts/send-email.sh --to owner@example.com --subject "I rebuilt your website" --url https://rebuild.vercel.app
+./scripts/send-email.sh --to owner@example.com --subject "I rebuilt your website" --url https://rebuild.netlify.app
 ```
 
 ## 📈 Metrics
 
-Real example results:
-- **Bright Smile Dental**: $5K deal, closed 24 hours
-- **Murphy Law Firm**: $10K deal, closed 48 hours  
-- **Pasta Planet**: $5K deal, closed 3 days
-- **Sarah Chen Real Estate**: $5K deal, closed 2 days
-- **Luxe Salon**: $5K deal, closed 3 days
+Illustrative example timelines (not verified live results):
+- **Dentist niche**: $5K deal, closed ~24–48 hours
+- **Law firm niche**: $10K deal, closed ~48–72 hours
+- **Restaurant niche**: $5K deal, closed ~3 days
+- **Real estate niche**: $5K deal, closed ~2–3 days
+- **Salon niche**: $5K deal, closed ~3 days
 
-**Average close time: 2.6 days** (after initial email)
+**Typical close window: 2–5 days** (after initial email; individual results vary)
 
 ## 🎯 Target Markets
 
@@ -151,7 +151,7 @@ Pick one niche, dominate it, then expand.
 ## 🚀 Next Steps
 
 1. **Read SKILL.md** (comprehensive guide)
-2. **Set up APIs** (Firecrawl, Vercel, AgentMail)
+2. **Set up APIs** (Firecrawl, Netlify, AgentMail)
 3. **Pick a niche** (dentist, lawyer, restaurant, etc.)
 4. **Find targets** (use scripts/find-targets.sh)
 5. **Build 1 sample** (follow full-site-rebuild.md)

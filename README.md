@@ -226,8 +226,8 @@ firecrawl login --api-key YOUR_API_KEY
 
 ### Netlify (Recommended)
 ```bash
-npm install -g vercel
-vercel login
+npm install -g netlify-cli
+netlify login
 # Connect your GitHub account via Netlify dashboard
 ```
 
@@ -276,7 +276,7 @@ Before you send a cold email, verify:
 **"Deploy to Netlify failed"**
 - Check GitHub repo is public/private correctly
 - Verify Netlify has repo access
-- Re-authenticate: `vercel login`
+- Re-authenticate: `netlify login`
 
 **"Cold email not converting"**
 - Improve subject line (A/B test)
