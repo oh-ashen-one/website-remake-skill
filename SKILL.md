@@ -1788,22 +1788,29 @@ bash scripts/build-site.sh \
 Add this cron job to run the pipeline every weekday at 9 AM Central:
 
 ```json
-openclaw cron add '{
-  "schedule": "0 9 * * 1-5",
-  "timezone": "America/Chicago",
+{
   "name": "website-remake-daily",
-  "delivery": {
-    "type": "discord",
-    "channel": "#website-rebuilder"
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 9 * * 1-5",
+    "tz": "America/Chicago"
   },
   "payload": {
-    "type": "agentTurn",
-    "model": "claude-haiku-4-5-20251001",
-    "isolated": true,
-    "message": "Run website-remake pipeline for dentist in chicago. Use scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name Alex. Post results to #website-rebuilder."
-  }
-}'
+    "kind": "agentTurn",
+    "model": "haiku",
+    "message": "Run the website-remake pipeline. Execute: bash /Users/andreofastora/.openclaw/workspace/skills/website-remake-skill/scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name Alex. Log output and post a summary of results (sites built, emails sent, failures) to #website-rebuilder tagging <@1468821540861902973>."
+  },
+  "sessionTarget": "isolated",
+  "delivery": {
+    "mode": "announce",
+    "channel": "discord",
+    "to": "#website-rebuilder"
+  },
+  "enabled": false
+}
 ```
+
+> **Note:** `enabled: false` by default — flip to `true` only after testing manually with `run-pipeline.sh` and confirming all API keys are present.
 
 ### What the Cron Does Each Day
 
@@ -1820,37 +1827,50 @@ openclaw cron add '{
 
 ### Enable / Disable
 
-```bash
-# List active crons
-openclaw cron list
+Manage via OpenClaw's `cron` tool (or ask Andre directly):
+
+```
+# List all crons (including disabled)
+→ cron action:list includeDisabled:true
+
+# Enable the daily run
+→ cron action:update jobId:<id> patch:{"enabled": true}
 
 # Disable (pause without deleting)
-openclaw cron disable website-remake-daily
-
-# Re-enable
-openclaw cron enable website-remake-daily
+→ cron action:update jobId:<id> patch:{"enabled": false}
 
 # Delete entirely
-openclaw cron delete website-remake-daily
+→ cron action:remove jobId:<id>
+
+# Trigger a manual run immediately
+→ cron action:run jobId:<id>
 ```
 
 ### Customizing the Niche & City
 
 Edit the cron payload message to target different markets:
 
-```bash
-# Lawyers in Miami
-openclaw cron add '{
-  "schedule": "0 9 * * 1-5",
-  "timezone": "America/Chicago",
+```json
+{
   "name": "website-remake-lawyers-miami",
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 10 * * 1-5",
+    "tz": "America/Chicago"
+  },
   "payload": {
-    "type": "agentTurn",
-    "model": "claude-haiku-4-5-20251001",
-    "isolated": true,
-    "message": "Run website-remake pipeline for lawyer in miami. Use scripts/run-pipeline.sh --niche lawyer --city miami --limit 3 --sender-name Alex."
-  }
-}'
+    "kind": "agentTurn",
+    "model": "haiku",
+    "message": "Run the website-remake pipeline. Execute: bash /Users/andreofastora/.openclaw/workspace/skills/website-remake-skill/scripts/run-pipeline.sh --niche lawyer --city miami --limit 3 --sender-name Alex. Post summary to #website-rebuilder."
+  },
+  "sessionTarget": "isolated",
+  "delivery": {
+    "mode": "announce",
+    "channel": "discord",
+    "to": "#website-rebuilder"
+  },
+  "enabled": false
+}
 ```
 
 ### Required Secrets
