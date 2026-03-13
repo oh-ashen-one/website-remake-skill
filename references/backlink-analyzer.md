@@ -3,7 +3,7 @@ name: backlink-analyzer
 version: "3.0.0"
 description: 'This skill should be used when the user asks to "analyze backlinks", "check link profile", "find toxic links", "link building opportunities", "off-page SEO", "who links to me", "I have spammy links", "how do I get more backlinks", or "disavow links". Analyzes backlink profiles to understand link authority, identify toxic links, discover link building opportunities, and monitor competitor link acquisition. Essential for off-page SEO strategy. For internal link analysis, see internal-linking-optimizer. For competitor link profiles, see competitor-analysis.'
 license: Apache-2.0
-compatibility: "Claude Code ≥1.0, skills.sh marketplace, ClawHub marketplace, Vercel Labs skills ecosystem. No system packages required. Optional: MCP network access for SEO tool integrations."
+compatibility: "Claude Code ≥1.0, skills.sh marketplace, ClawHub marketplace, ClawHub skills ecosystem. No system packages required. Optional: MCP network access for SEO tool integrations."
 metadata:
   openclaw:
     requires:

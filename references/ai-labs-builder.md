@@ -48,7 +48,7 @@ ailabs create dashboard my-analytics --type analytics
 ailabs create workflow my-automation --template automation
 
 # Deploy
-ailabs deploy my-project --platform vercel
+ailabs deploy my-project --platform netlify
 ```
 
 ## Commands
@@ -285,10 +285,10 @@ await index.upsert([{
 
 ## Deployment
 
-### Vercel (Recommended)
+### Netlify (Recommended)
 
 ```bash
-ailabs deploy my-project --platform vercel
+ailabs deploy my-project --platform netlify
 ```
 
 Features:

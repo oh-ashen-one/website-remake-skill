@@ -1,6 +1,6 @@
 ---
 name: app-builder
-description: Build, edit, and deploy Instant-backed apps using npx instant-cli, create-instant-app (Next.js + Codex), GitHub (gh), and Vercel (vercel). Use when asked to create a new app, modify an existing app, fix bugs, add features, or deploy/update an app. Projects live under ~/apps; always work inside the relevant app folder.
+description: Build, edit, and deploy Instant-backed apps using npx instant-cli, create-instant-app (Next.js + Codex), GitHub (gh), and Netlify (netlify). Use when asked to create a new app, modify an existing app, fix bugs, add features, or deploy/update an app. Projects live under ~/apps; always work inside the relevant app folder.
 ---
 
 # App Builder
@@ -8,7 +8,7 @@ description: Build, edit, and deploy Instant-backed apps using npx instant-cli, 
 You have access to:
 - `npx instant-cli`
 - `gh` 
-- `vercel`
+- `netlify-cli`
 
 If you use these tools, and find out that you don't have them or are not logged in, prompt the user to install them and log in. 
 
@@ -21,7 +21,7 @@ All apps live in: `~/apps`
 - For now, always push to `main`.
 - Every app must be:
   1) pushed to GitHub
-  2) deployed on Vercel
+  2) deployed on Netlify
 
 ## Workflow: create a new app
 
@@ -46,10 +46,10 @@ All apps live in: `~/apps`
      - `gh repo create <repo-name> --private --source . --remote origin --push`
        - Use `--public` if the user requests.
 
-5. **Vercel: create/link project and deploy**
+5. **Netlify: create/link project and deploy**
    - From `~/apps/<app-name>`:
-     - `vercel link` (or `vercel project add` / `vercel` depending on prompts)
-     - `vercel --prod`
+     - `netlify link` (or `netlify sites:create` if first deploy)
+     - `netlify deploy --prod`
 
 6. **Implement requested changes**
    - Use a coding agent (Codex CLI or equivalent) from within the app directory to make changes.
@@ -61,7 +61,7 @@ All apps live in: `~/apps`
    - `git push -u origin main`
 
 8. **Deploy update**
-   - `vercel --prod`
+   - `netlify deploy --prod`
 
 ## Workflow: edit an existing app
 
@@ -72,16 +72,16 @@ All apps live in: `~/apps`
 4. Make changes via coding agent / normal edits.
 5. Test/build as appropriate.
 6. Commit + push to `main`.
-7. Deploy to Vercel (`vercel --prod`).
+7. Deploy to Netlify (`netlify deploy --prod`).
 
 ## Environment variables (.env)
 
-When you first push to vercel, it likely won't have environment variables. Use the CLI to push the environment variables you do have in the local .env file.
+When you first push to Netlify, it likely won't have environment variables. Use the CLI to push the environment variables you do have in the local .env file.
 
 ## Notes / guardrails
 
 - If `create-instant-app` created the repo + remote already, do not re-create it—just ensure `origin` exists and `main` is pushed.
-- If Vercel is already linked, do not re-link—just deploy.
+- If Netlify is already linked, do not re-link—just deploy.
 
 ## Communicating 
 
