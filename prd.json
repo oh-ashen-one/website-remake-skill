@@ -1,0 +1,99 @@
+{
+  "objective": "Ralph loop the website-remake SKILL.md from v3.0.1 to v4.0 — a bulletproof autonomous pipeline that produces genuinely premium sites, handles failures gracefully, and converts cold prospects into paying clients.",
+  "completion_signal": "<promise>COMPLETE</promise>",
+  "context_files": [
+    "~/.openclaw/workspace/skills/website-remake/SKILL.md",
+    "~/.openclaw/workspace/skills/website-remake/progress.txt"
+  ],
+  "rules": [
+    "Update progress.txt after every story completion",
+    "Commit after every story: git add -A && git commit -m 'story [ID]: [title]'",
+    "Never destroy existing working sections — patch, don't rewrite from scratch",
+    "If a story fails verification, mark passes: false and note WHY in progress.txt",
+    "Max iterations: 10"
+  ],
+  "stories": [
+    {
+      "id": "1",
+      "title": "Fix Internal Contradictions",
+      "tasks": [
+        "Audit SKILL.md for conflicting instructions: Step 7 says Deploy to GitHub Pages but Deployment section says Deploy to Netlify — reconcile (GitHub Pages = demos, Netlify = production handoff)",
+        "Fix: Cron config says model haiku but frontmatter says Never downgrade to Haiku for build tasks — fix cron to use sonnet or add note that cron triggers orchestrator on haiku but spawns sonnet subagent for builds",
+        "Fix: Die 5 table has rolls 1-10 in main table then 11-15 as a separate table — merge into one clean table (d15 not d10)",
+        "Fix: Anti-Slop ALWAYS section lists Inter as acceptable body font but also appears in NEVER list — clarify: Inter is OK for body ONLY if paired with a distinctive display font, never as the sole font",
+        "Search for any [placeholder] or TODO that should be filled in",
+        "Ensure every bash snippet uses consistent path patterns (/tmp/rebuild/[business-name]/)",
+        "Version bump frontmatter to version: 4.0.0"
+      ],
+      "verify": "Read full SKILL.md top to bottom. Zero contradictions. Zero ambiguous instructions. Version is 4.0.0.",
+      "passes": false
+    },
+    {
+      "id": "2",
+      "title": "Add GSAP Snippet Library Per Die 5 Roll",
+      "tasks": [
+        "For each Die 5 roll (1-15), add a working code snippet to references/motion-signatures.md",
+        "Each snippet must: import gsap + ScrollTrigger, use animateIfExists() wrapper, include CSS initial states (opacity, transform), handle prefers-reduced-motion, be copy-pasteable into main.js with only selector changes needed",
+        "Add a note in SKILL.md Die 5 section: For implementation code, read references/motion-signatures.md section matching your roll"
+      ],
+      "verify": "Run: node --check on each snippet extracted to a temp file. Each references gsap.registerPlugin. Each has ScrollTrigger. Each handles reduced-motion. All 15 present.",
+      "passes": false
+    },
+    {
+      "id": "3",
+      "title": "Add Complete Page Templates Per Die 6 Roll",
+      "tasks": [
+        "Create references/section-sequences.md with HTML skeleton for each Die 6 roll (1-6)",
+        "Each skeleton must: include semantic HTML structure, use class names consistent with styles.css conventions, include CONTENT placeholders, include Die 5 animation hooks (class=reveal, class=gsap-hidden, data-count, etc.), show WHICH Die 3 hero treatment integrates at the top, be structurally different from other rolls"
+      ],
+      "verify": "6 skeletons present. Each looks structurally different — different section order, different layout patterns, different content emphasis. SKILL.md references this file.",
+      "passes": false
+    },
+    {
+      "id": "4",
+      "title": "Harden the Completion Gate Bash Script",
+      "tasks": [
+        "Add checks to scripts/verify.sh (or create it): JSON-LD schema validity, sitemap lists all HTML files, robots.txt references correct sitemap URL, no lorem ipsum or TODO in any deployed HTML, no console.log in main.js, CSS file size > 1KB, main.js file size > 500 bytes, all inter-page links resolve",
+        "Make script output a SCORE (pass count / total checks) not just pass/fail",
+        "Add exit codes: 0 = deploy, 1 = fixable issues, 2 = critical failure"
+      ],
+      "verify": "Run the script against a mock file tree in /tmp/test-gate/. Script produces a score. Exit codes work correctly.",
+      "passes": false
+    },
+    {
+      "id": "5",
+      "title": "Cold Email — Add Niche-Specific Variations",
+      "tasks": [
+        "Add references/email-templates.md with 3 templates x 8 niches = 24 email variations",
+        "Niches: dentist, restaurant, law firm, auto repair, salon, plumber, real estate agent, chiropractor",
+        "Each variation must: be under 90 words, reference something specific to that niche, have a subject line that creates curiosity, sound like a real person not a sales bot"
+      ],
+      "verify": "24 variations present. Read each aloud — would you delete it or click the link? None sound like mad-libs. SKILL.md references this file.",
+      "passes": false
+    },
+    {
+      "id": "6",
+      "title": "Document Failure Modes & Recovery Paths",
+      "tasks": [
+        "Create references/troubleshooting.md covering: Gemini API rate limit, Firecrawl returns empty, GitHub Pages 404 after deploy, AgentMail API error, subagent timeout, NAP scrape finds no email, site is actually good (not outdated), business is permanently closed",
+        "Each failure mode must have a concrete recovery action not just handle the error"
+      ],
+      "verify": "8 failure modes documented. Each has a specific recovery path. SKILL.md references this file.",
+      "passes": false
+    },
+    {
+      "id": "7",
+      "title": "Final SKILL.md Review & Cleanup",
+      "tasks": [
+        "Read the entire SKILL.md from top to bottom as if seeing it for the first time",
+        "Check: Could an agent execute this skill from start to finish with ZERO clarification needed?",
+        "Remove dead references, duplicated instructions, conflicting sections",
+        "Ensure section flow is logical: Hard Rules -> Pipeline -> Randomizer -> Build Instructions -> Completion Gate -> Deploy -> Outreach -> Reference Materials",
+        "Verify all references/ files are mentioned in SKILL.md with clear read this when instructions",
+        "If SKILL.md body is over 500 lines, move content to references/ and add pointers"
+      ],
+      "verify": "Fresh-eyes read complete. No confusion points. All references/ files linked. Version is 4.0.0 in frontmatter.",
+      "passes": false
+    }
+  ]
+}
