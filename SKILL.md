@@ -1,49 +1,799 @@
 ---
 name: website-remake
-description: Find businesses with outdated websites, scrape their existing site, rebuild it to $10K quality with 3D animations/GSAP/scroll effects, auto-deploy to Netlify, and sell it back via cold email. Full pipeline from target finding to payment.
+description: Autonomous pipeline — find businesses with outdated websites, rebuild to $10K quality using Google Stitch for UI generation (multi-page architecture, GSAP scroll effects, AI hero images), deploy demos to GitHub Pages, log to Notion, send cold outreach. Netlify for production handoff only. Runs end-to-end without human intervention.
 tags:
   - business-development
   - web-design
   - sales
   - ai-automation
   - lead-generation
-  - claude-code
-  - firecrawl
-version: 2.0.0
+version: 5.0.0
+agent_model: sonnet
+notes: "All subagent spawns for this skill MUST use Sonnet. Haiku is too weak for multi-page site builds. Stitch SDK generates the homepage HTML/CSS — Claude Code expands it into full multi-page architecture."
 metadata:
   openclaw:
     requires:
       env:
-        - FIRECRAWL_API_KEY
+        - STITCH_API_KEY
         - NETLIFY_TOKEN
         - GEMINI_API_KEY
         - AGENTMAIL_API_KEY
 ---
 
-# Website Remake — Master Skill
-
-**The definitive $10K website rebuilding pipeline.** Find outdated business websites, analyze them, rebuild to premium quality with animations/3D effects, deploy instantly, and close deals via cold outreach.
+# Website Remake — Master Skill v4
 
 ---
 
-## Table of Contents
+## ⛔ HARD RULES — READ FIRST
 
-1. [Business Model & Pricing](#business-model--pricing)
-2. [Pipeline Overview](#pipeline-overview)
-3. [Step 1: Finding & Qualifying Targets](#step-1-finding--qualifying-targets)
-4. [Step 2: Site Analysis & Scraping](#step-2-site-analysis--scraping)
-5. [Step 3: Building the Premium Remake](#step-3-building-the-premium-remake)
-6. [Step 4: Animation Stack & Premium Effects](#step-4-animation-stack--premium-effects)
-7. [Step 5: Anti-Slop Design Checklist](#step-5-anti-slop-design-checklist)
-8. [Step 6: SEO Implementation](#step-6-seo-implementation)
-9. [Step 7: Deployment to Netlify](#step-7-deployment-to-netlify)
-10. [Step 8: Cold Outreach Strategy](#step-8-cold-outreach-strategy)
-11. [Step 9: Closing & Objection Handling](#step-9-closing--objection-handling)
-12. [Step 10: API Keys & Setup](#step-10-api-keys--setup)
-13. [Step 11: Fast Build Path (AntiGravity + Stitch)](#step-11-fast-build-path-antigravity--stitch)
-14. [Step 12: Autonomous Cron Setup](#step-12-autonomous-cron-setup)
-15. [SEO & GEO Optimization](#seo--geo-optimization-step)
-16. [Anthropic Frontend Design + Web Interface Guidelines + SEO Audit](#anthropic-frontend-design--web-interface-guidelines--seo-audit--synthesized)
+1. **NO EMOJIS** in the built site. Ever. Use SVG icons or icon fonts (Lucide, Heroicons, Phosphor).
+2. **DARK MODE MANDATORY.** Background must never be `#FFFFFF`, `#F5F5F5`, `#FAFAFA`, or any near-white. Use rich dark tones: charcoal, dark navy, deep forest, dark teal, espresso. White/cream is text/accent only.
+3. **MOBILE-FIRST MANDATORY.** CSS written mobile-first (`min-width` media queries to scale up). Touch targets ≥ 44px. `clamp()` for headlines. Grid/flex collapse at 768px. Hamburger nav required. `max-width: 100%` on all images. Test at 375px, 390px, 768px.
+4. **NO PURPLE.** No violet, indigo, lavender — not as gradient, not as accent, not anywhere. This is the #1 AI slop tell.
+5. **NO FAKE DATA.** Never invent phone numbers, addresses, or business names. Extract verbatim from the original site or leave `<!-- TODO: INSERT REAL [FIELD] -->`.
+6. **MULTI-PAGE ARCHITECTURE MANDATORY.** Every build produces multiple HTML files. A single `index.html` is a FAILED BUILD. See Completion Gate below.
+7. **NEVER use Vercel or Wix.** Deploy demos to GitHub Pages (free). Netlify is for production handoff after client payment only.
+
+---
+
+## 🔄 PIPELINE EXECUTION CHECKLIST — RUN TOP TO BOTTOM
+
+This is the autonomous execution flow. Run each step in order. No human approval needed. No skipping steps.
+
+```
+┌─────────────────────────────────────────────────┐
+│  PIPELINE EXECUTION — MANDATORY SEQUENCE        │
+├─────────────────────────────────────────────────┤
+│  1. FIND TARGET         → Brave Search          │
+│  2. SCRAPE NAP          → curl + Firecrawl      │
+│  3. STITCH HOMEPAGE     → Google Stitch SDK     │
+│  4. GENERATE IMAGES     → Nano Banana (Imagen)  │
+│  5. EXPAND TO MULTI-PAGE → Claude Code          │
+│  6. RUN COMPLETION GATE → verify files on disk  │
+│  7. DEPLOY TO GITHUB PAGES → gh repo create + push  │
+│  8. LOG TO NOTION       → API call to tracker DB    │
+│  9. SEND COLD EMAIL     → AgentMail API              │
+│ 10. POST TO #announcements → old URL + new URL + email│
+└─────────────────────────────────────────────────┘
+```
+
+### Step 1: Find Target
+
+**TARGET DIVERSITY — MANDATORY. Read this before searching.**
+
+Before picking a niche and city, check the target memory log:
+```bash
+tail -10 /Users/andreofastora/.openclaw/workspace/target-memory.log 2>/dev/null || echo "No log yet"
+```
+
+**Re-pick rules (enforced, not suggested):**
+- If last build was in Chicago → pick a different city this time
+- If last build was auto repair → pick a different niche this time
+- If last 2 builds were in the same state → pick a different state
+- If last 2 builds were trades (auto, roofing, plumbing, HVAC) → pick a service business (dentist, law, salon, restaurant)
+- Never pick the same niche+city combination twice in a row
+
+**Approved city rotation (cycle through these, don't repeat):**
+Chicago → Houston → Phoenix → Dallas → San Antonio → Miami → Atlanta → Denver → Seattle → Nashville → back to Chicago
+
+**Approved niche rotation (alternate between categories):**
+- Trades: auto repair, roofing, plumbing, HVAC, electrician, landscaping
+- Medical/Professional: dentist, chiropractor, optometrist, law firm, accountant
+- Food/Hospitality: restaurant, cafe, catering, food truck, bakery
+- Beauty/Wellness: hair salon, nail salon, spa, gym, yoga studio
+- Retail/Service: florist, pet groomer, dry cleaner, locksmith, moving company
+
+After selecting target, append to log:
+```bash
+echo "[$(date +%Y-%m-%d)] [BUSINESS_NAME] | City:[CITY] State:[STATE] Niche:[NICHE]" \
+  >> /Users/andreofastora/.openclaw/workspace/target-memory.log
+```
+
+```bash
+# Search for outdated local business sites
+# Use web_search with queries like: "[niche] [city]" based on rotation above
+# Pick a business with: 4+ star Google reviews, website exists but looks pre-2018, local focus
+# Signs of a weak site: Wix/Squarespace free subdomain, no HTTPS, copyright year 3+ years old,
+#   broken mobile, phone number not in header, no Google Maps on contact page
+```
+
+### Step 2: Scrape NAP (Name, Address, Phone)
+```bash
+# Extract EXACT business info — never guess
+curl -sL "https://[TARGET_SITE]" | grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s][0-9]{4}\b' | sort -u
+# Also extract: business name, address, services list, testimonials, photos
+# Use Firecrawl for structured content extraction
+# Lock these values BEFORE writing any code:
+#   BUSINESS_NAME: [exact]
+#   PHONE: [exact]
+#   ADDRESS: [exact]
+#   SERVICES: [list from site]
+```
+
+### Step 3: Generate Homepage with Google Stitch
+
+**Stitch replaces both video gen and manual HTML writing for the homepage.** It uses Gemini 2.5 Pro to generate a complete high-fidelity UI design + clean HTML/CSS in one shot, customized to the business's niche, brand, and real NAP data.
+
+```javascript
+// Install once: npm install @google/stitch-sdk (in /tmp/rebuild/[slug]/)
+// API key: /Users/andreofastora/.openclaw/workspace/.secrets/stitch-api-key.txt
+
+import { StitchToolClient } from "@google/stitch-sdk";
+import { writeFileSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
+
+const STITCH_API_KEY = require('fs').readFileSync(
+  '/Users/andreofastora/.openclaw/workspace/.secrets/stitch-api-key.txt', 'utf8'
+).trim();
+
+const client = new StitchToolClient({ apiKey: STITCH_API_KEY });
+
+// 1. Create project
+const projectResult = await client.callTool("create_project", {
+  title: `${BUSINESS_NAME} — Rebuild Demo`
+});
+const projectId = projectResult.projectId || projectResult.name?.split('/')[1];
+console.log("Stitch project ID:", projectId);
+
+// 2. Generate homepage — use real NAP data from Step 2
+const screenResult = await client.callTool("generate_screen_from_text", {
+  projectId,
+  prompt: buildStitchPrompt(BUSINESS_NAME, NICHE, CITY, STATE, PHONE, ADDRESS, SERVICES, COLOR_SYSTEM),
+  deviceType: "DESKTOP"
+});
+
+// 3. Get HTML download URL and screenshot URL
+function findUrls(obj, depth=0) {
+  const urls = { html: null, image: null };
+  if (depth > 6 || typeof obj !== 'object' || !obj) return urls;
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string') {
+      if (v.startsWith('https://contribution.usercontent.google.com') && !urls.html) urls.html = v;
+      if (v.startsWith('https://lh3.googleusercontent.com') && !urls.image) urls.image = v;
+    }
+    if (typeof v === 'object') {
+      const sub = findUrls(v, depth+1);
+      if (sub.html && !urls.html) urls.html = sub.html;
+      if (sub.image && !urls.image) urls.image = sub.image;
+    }
+  }
+  return urls;
+}
+
+const { html: htmlUrl, image: imageUrl } = findUrls(screenResult);
+
+// 4. Download HTML and screenshot
+const { execSync } = await import('child_process');
+mkdirSync(`/tmp/rebuild/${SLUG}/assets`, { recursive: true });
+execSync(`curl -sL "${htmlUrl}" -o /tmp/rebuild/${SLUG}/index.html`);
+execSync(`curl -sL "${imageUrl}" -o /tmp/rebuild/${SLUG}/assets/stitch-preview.jpg`);
+
+console.log("Stitch homepage downloaded.");
+await client.close();
+```
+
+**Stitch prompt builder — fill in real data from Step 2:**
+
+```javascript
+function buildStitchPrompt(name, niche, city, state, phone, address, services, colorSystem) {
+  const nicheInstructions = {
+    'auto repair': 'Dark industrial theme. Bold sans-serif headlines (Oswald or Clash Display). Red accent. Phone number in hero. Free estimate CTA. Trust badges (years in business, ASE certified). No emojis. No purple.',
+    'roofing': 'Dark bold theme. Industrial trust signals. Free inspection CTA. Years in business counter. Storm damage section.',
+    'law firm': 'Authoritative dark theme. Serif headlines (Playfair Display). Practice area pages. Free consultation CTA. Bar credentials visible.',
+    'dentist': 'Dark professional theme. Soft teal or gold accent. Before/after gallery placeholder. New patient CTA. Insurance info.',
+    'restaurant': 'Warm dark theme. Serif + sans pairing. Menu link in hero. Hours prominently placed. Reservation CTA. Food photography dominant.',
+    'salon': 'Dark elegant theme. Thin serif headlines. Booking CTA everywhere. Service menu with prices. Gallery section.',
+    'plumbing': 'Dark bold theme. 24/7 emergency banner. Phone number massive in hero. Same-day service CTA.',
+  };
+
+  const instructions = Object.entries(nicheInstructions)
+    .find(([key]) => niche.toLowerCase().includes(key))?.[1]
+    || 'Dark professional theme. No emojis. No purple. Mobile-first layout.';
+
+  return `
+Homepage for ${name}, a ${niche} business in ${city}, ${state}.
+
+DESIGN RULES:
+- ${instructions}
+- Dark background mandatory — never white or near-white
+- No emojis anywhere on the page
+- No purple, violet, lavender, or indigo
+- Mobile-first responsive layout
+- GSAP scroll animations (fade-up on scroll)
+- Color system: ${colorSystem}
+
+REAL BUSINESS DATA (use verbatim, do not invent):
+- Business name: ${name}
+- Phone: ${phone}
+- Address: ${address}
+- City/State: ${city}, ${state}
+- Services: ${services.join(', ')}
+
+REQUIRED SECTIONS:
+1. Nav bar — logo left, links right, phone number visible, CTA button
+2. Hero — large headline with "${city}'s Trusted ${niche}", subtext, dual CTA (primary: call phone, secondary: see services)
+3. Services grid — one card per service, icon (SVG Lucide), short description
+4. Trust/stats bar — years in business, customers served, 5-star reviews count
+5. Testimonials — 3 review cards with stars, name, city
+6. Contact section — address, phone, email, map placeholder
+7. Footer — all nav links, phone, address, copyright
+
+OUTPUT: Clean semantic HTML + embedded CSS. No external dependencies except GSAP CDN. No framework boilerplate.
+`.trim();
+}
+```
+
+**After Stitch generates the homepage:**
+- Save the HTML to `/tmp/rebuild/[slug]/index.html`
+- Save the screenshot to `/tmp/rebuild/[slug]/assets/stitch-preview.jpg`
+- The Stitch HTML is the homepage. Claude Code expands it in Step 5.
+
+**Stitch design system extraction (optional — use for existing branded clients):**
+```javascript
+// Extract design system from any URL
+const designResult = await client.callTool("extract_design_system", {
+  url: ORIGINAL_URL
+});
+// Returns: colors, fonts, spacing — use these in your Stitch prompt for brand consistency
+```
+
+### Step 4: Generate Nano Banana Images (Hero + Service Cards)
+
+Generate hero background and service card images to swap into the Stitch HTML:
+
+```python
+import urllib.request, json, base64, os
+
+GEMINI_API_KEY = open('/Users/andreofastora/.openclaw/workspace/.secrets/gemini-api-key.txt').read().strip()
+OUT_DIR = f"/tmp/rebuild/{SLUG}/assets"
+os.makedirs(OUT_DIR, exist_ok=True)
+
+def generate_image(prompt, filename):
+    payload = {
+        "instances": [{"prompt": prompt}],
+        "parameters": {"sampleCount": 1, "aspectRatio": "16:9"}
+    }
+    req = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GEMINI_API_KEY}",
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req) as resp:
+        d = json.load(resp)
+    with open(f"{OUT_DIR}/{filename}", 'wb') as f:
+        f.write(base64.b64decode(d['predictions'][0]['bytesBase64Encoded']))
+    print(f"Generated: {filename}")
+
+# Niche-appropriate prompts — fill in the business context
+generate_image(f"Cinematic wide shot of a professional {NICHE} business in {CITY}, dramatic lighting, dark atmospheric background, high quality editorial photography", "hero-main.jpg")
+generate_image(f"Close-up professional shot of {SERVICES[0]} in progress, dark workshop environment, dramatic lighting", "service-1.jpg")
+generate_image(f"Editorial shot of {SERVICES[1]} equipment and tools, dark background, cinematic", "service-2.jpg")
+generate_image(f"Professional action shot of {SERVICES[2]} work being done, dark industrial aesthetic", "service-3.jpg")
+```
+
+After generating, swap the placeholder images in the Stitch HTML with these real ones.
+
+### Step 5: Expand to Multi-Page Architecture
+Claude Code takes the Stitch homepage and builds out the full required file structure.
+
+### Step 6: Run Completion Gate
+See "COMPLETION GATE" section below. Build is not done until gate passes.
+
+### Step 7: Deploy to GitHub Pages (FREE — outreach demos only)
+```bash
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$PATH"
+SITE_SLUG="[business-name-slug]"  # e.g. takase-auto-rebuild
+SITE_DIR="/tmp/rebuild/$SITE_SLUG"
+
+cd "$SITE_DIR"
+git init
+git add .
+git commit -m "feat: website rebuild for $SITE_SLUG"
+
+# Create public repo under oh-ashen-one org
+gh repo create "oh-ashen-one/$SITE_SLUG" --public --source . --remote origin --push
+
+# Enable GitHub Pages on main branch root
+gh api "repos/oh-ashen-one/$SITE_SLUG/pages" \
+  -X POST \
+  -f source[branch]=main \
+  -f source[path]=/ \
+  --silent
+
+# Live URL (may take 60s to go live):
+DEMO_URL="https://oh-ashen-one.github.io/$SITE_SLUG"
+echo "Demo URL: $DEMO_URL"
+```
+
+**Why GitHub Pages:**
+- Free. Zero monthly cost. No account limits for public repos.
+- These are outreach demos — not production sites. They just need to be viewable.
+- Netlify is for production only: ForgeAI SEO itself, client handoffs after payment.
+- GitHub Pages URL format: `oh-ashen-one.github.io/[site-slug]`
+- Pages goes live in ~60 seconds after push. Wait before sending the cold email.
+
+### Step 8: Log to Notion
+```bash
+NOTION_TOKEN=$(cat ~/.openclaw/workspace/.secrets/notion.env | grep NOTION_API_KEY | cut -d= -f2)
+DB_ID="327664f6-a1e3-81e8-879d-ff9d14f95213"
+curl -s -X POST "https://api.notion.com/v1/pages" \
+  -H "Authorization: Bearer $NOTION_TOKEN" \
+  -H "Notion-Version: 2022-06-28" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "parent": {"database_id": "'$DB_ID'"},
+    "properties": {
+      "Business Name": {"title": [{"text": {"content": "[BUSINESS_NAME]"}}]},
+      "Original URL": {"url": "[ORIGINAL_URL]"},
+      "Demo URL": {"url": "[DEMO_URL]"},
+      "Niche": {"select": {"name": "[NICHE]"}},
+      "City": {"rich_text": [{"text": {"content": "[CITY]"}}]},
+      "Phone": {"phone_number": "[PHONE]"},
+      "Email Sent": {"checkbox": false},
+      "Email Address": {"email": "[OWNER_EMAIL]"},
+      "Status": {"select": {"name": "Built"}},
+      "Agent": {"select": {"name": "Andre"}},
+      "Date Built": {"date": {"start": "[YYYY-MM-DD]"}},
+      "Notes": {"rich_text": [{"text": {"content": "Demo built [YYYY-MM-DD]. Awaiting email send."}}]}
+    }
+  }'
+```
+
+### Step 9: Send Cold Email via AgentMail
+```bash
+AGENTMAIL_API_KEY=$(cat ~/.openclaw/workspace/.secrets/agentmail-api-key.txt | tr -d '[:space:]')
+curl -s -X POST "https://api.agentmail.to/v0/inboxes/forgeaiseo@agentmail.to/messages/send" \
+  -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": ["[OWNER_EMAIL]"],
+    "from_display_name": "Alison | Teza",
+    "subject": "[BUSINESS_NAME] — we rebuilt your entire website",
+    "text": "Hi [FIRST_NAME or 'there'],\n\nMy name is Alison, from Teza. We help small businesses rebuild their digital footprint using AI — new websites, SEO, the works.\n\nWe rebuilt your entire website because we noticed a few problems with your current one: [SPECIFIC_PROBLEMS].\n\nThese kinds of issues are quietly costing you customers every week.\n\nTake a look at what we built:\n[DEMO_URL]\n\nCompletely free to browse — no credit card, no catch.\n\nIf you like it, we'd love to sell it to you. We can have the whole thing running on your own domain within 24 hours. If it's not for you, no pressure at all — just let us know.\n\n— Alison\nTeza"
+  }'
+
+# MANDATORY: Update Notion row after email sends — run this immediately after the email API call
+# Captures: email sent date, subject used, observation that triggered the email, full status update
+NOTION_TOKEN=$(grep NOTION_API_KEY /Users/andreofastora/.openclaw/workspace/.secrets/notion.env | cut -d= -f2)
+EMAIL_DATE=$(date -u +"%Y-%m-%d")
+curl -s -X PATCH "https://api.notion.com/v1/pages/[NOTION_PAGE_ID]" \
+  -H "Authorization: Bearer $NOTION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Notion-Version: 2022-06-28" \
+  -d "{
+    \"properties\": {
+      \"Email Sent\": {\"checkbox\": true},
+      \"Status\": {\"select\": {\"name\": \"Emailed\"}},
+      \"Notes\": {\"rich_text\": [{\"text\": {\"content\": \"Demo built $EMAIL_DATE. Cold email sent $EMAIL_DATE to [OWNER_EMAIL]. Subject: [EMAIL_SUBJECT]. Observation: [ONE_SPECIFIC_THING_NOTICED_ON_THEIR_SITE]. Template used: d4=[TEMPLATE_NUMBER].\"}}]}
+    }
+  }"
+# Verify output — Email Sent must be true before proceeding to Step 10
+echo "Notion updated. Verifying..."
+```
+
+**Email sender:** `forgeaiseo@agentmail.to` — display name "Alex | Forge"
+
+---
+
+### Step 10: Post to #announcements
+
+After email is sent, post to Discord channel **1480787296729960468** (#announcements) with this exact format — nothing else:
+
+```
+**[BUSINESS_NAME]** — [CITY], [STATE] | [NICHE]
+
+🔴 Old site: [ORIGINAL_URL]
+🟢 New site: [DEMO_URL]
+📋 Notion: https://www.notion.so/[NOTION_PAGE_ID_NO_DASHES]
+
+📧 Emailed [OWNER_EMAIL] — forwarded to Hari's inbox so he can review it there.
+```
+
+**Rules:**
+- Post to #announcements ONLY (channel ID: 1480787296729960468)
+- DO NOT paste the full email body in Discord — forward it to Hari's email instead (see below)
+- No narration, no "pipeline complete" — just the 3 lines above
+- This is the only Discord message — no other channels
+
+**After posting to #announcements, forward the email via AgentMail:**
+```bash
+AGENTMAIL_KEY=$(cat /Users/andreofastora/.openclaw/workspace/.secrets/agentmail-api-key.txt | tr -d '[:space:]')
+curl -s -X POST "https://api.agentmail.to/v0/inboxes/forgeaiseo@agentmail.to/messages/send" \
+  -H "Authorization: Bearer $AGENTMAIL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": ["haritth@gmail.com"],
+    "subject": "FWD: [EMAIL_SUBJECT] — sent to [OWNER_EMAIL]",
+    "text": "Here is the cold email sent to [BUSINESS_NAME] ([OWNER_EMAIL]):\n\n---\n\n[FULL EMAIL BODY]"
+  }'
+```
+**NEVER use** `friendlycookie166@agentmail.to` — that inbox is retired.
+
+---
+
+## 🎨 DESIGN SYSTEM — STITCH-FIRST, NICHE-GUIDED
+
+**How design decisions work with Stitch in the pipeline:**
+
+Stitch auto-generates a design system during Step 3 — it names it, chooses fonts, colors, spacing, and layout style. The `designMd` field in the Stitch response contains the full design rationale. **Read it** before expanding to multi-page in Step 5 — it tells you exactly what Stitch built and why.
+
+**Your job:** Guide Stitch with niche + real data in the prompt (Step 3). Stitch executes. Claude Code expands using the same system Stitch established.
+
+**When Stitch design diverges from rules:**
+- If Stitch picked purple → override in the Step 5 Claude Code expansion (`--override-color`)
+- If Stitch picked white background → add `background: #131313` to `body` in `styles.css`
+- If Stitch used emojis → strip them in the expansion step
+
+The dice rolls below are now **fallback only** — use them when you need to override Stitch's choices or when building without Stitch.
+
+Every build has two layers:
+1. **Niche vibe** — locked. A roofing company always feels like a trades site. A restaurant always feels warm and food-forward. Never random.
+2. **Color, typography, motion, nav** — guided by Stitch prompt, with niche-appropriate overrides below.
+
+---
+
+### STEP 1: Identify Niche → Lock Vibe
+
+**TRADES** (roofing, plumbing, HVAC, auto, electrician, landscaping)
+- Vibe: Bold, industrial, no-nonsense. Built to instill trust in working-class homeowners.
+- Typography: Heavy sans-serif headlines — Oswald, Bebas Neue, Clash Display. Body: DM Sans or Inter.
+- Hero imagery: Hands working, job sites, equipment, before/after. NOT stock smiling people.
+- Trust signals: Years in business counter, license numbers, BBB/certifications, free estimate CTA always visible.
+- Layout feel: Dense and informative. Phone number in header always. Address visible.
+- Banned: Script fonts, decorative serifs, minimalist whitespace layouts, anything that looks like a tech startup.
+
+**LAW / MEDICAL / PROFESSIONAL** (law firms, dentists, chiropractors, accountants, consultants)
+- Vibe: Authority and calm. Clients need to trust you with serious problems.
+- Typography: Serif or authoritative sans — Playfair Display, Cormorant, or DM Serif for headings. DM Sans body.
+- Hero imagery: Office interiors, consultations, city skylines, professional portraits. Clean.
+- Trust signals: Years of experience, case results/testimonials, practice area pages, consultation CTA.
+- Layout feel: Editorial and spacious. Clear hierarchy. Long-scroll storytelling.
+- Banned: Loud accent colors, industrial fonts, counter animations for trivial stats, anything flashy.
+
+**RESTAURANT / FOOD / CAFE / BAKERY**
+- Vibe: Warm, appetizing, inviting. Makes you want to eat there right now.
+- Typography: Mix of an elegant serif (Cormorant, Playfair) for dish names/headlines + clean sans for body.
+- Hero imagery: Food close-ups, plated dishes, restaurant ambiance, kitchen action. Shot in warm light.
+- Trust signals: Hours, location, reservations CTA, menu link, real reviews.
+- Layout feel: Magazine editorial. Generous food photography. Menu section essential.
+- Banned: Cold blue tones, industrial aesthetic, stat counters, anything that feels corporate.
+
+**BEAUTY / WELLNESS** (salons, spas, gyms, yoga studios, nail bars)
+- Vibe: Soft, aspirational, personal. Clients are treating themselves.
+- Typography: Elegant thin serif + light sans. Cormorant Garamond, Libre Baskerville, or similar.
+- Hero imagery: Studio interiors, treatments, before/after transformations, products. Warm and intimate.
+- Trust signals: Before/after gallery, client reviews, booking CTA always prominent.
+- Layout feel: Airy and spacious. Lots of photography. Soft motion.
+- Banned: Heavy industrial fonts, loud accent colors, dense info layouts, anything that feels masculine/aggressive.
+
+**RETAIL / SERVICE** (florists, pet groomers, movers, locksmiths, dry cleaners)
+- Vibe: Friendly, local, practical. Accessible and easy to contact.
+- Typography: Approachable sans — Plus Jakarta Sans, Nunito, or DM Sans. Clean and readable.
+- Hero imagery: Products, storefronts, service in action, happy outcomes (pets, flowers, clean clothes).
+- Trust signals: Local area served, hours, phone number, "family-owned" if applicable.
+- Layout feel: Clear and practical. Services front and center. Contact easy to find.
+- Banned: Overly minimal/luxurious feel, aggressive dark aesthetics, anything that feels intimidating.
+
+---
+
+### STEP 2: Randomize Within Niche
+
+Once niche vibe is locked, randomize the following to keep each build visually distinct.
+
+#### COLOR PALETTE (d8 — filtered by niche)
+
+| Roll | System | Dominant | Accent |
+|------|--------|----------|--------|
+| 1 | Ash & Ember | Charcoal #1C1C1E | Burnt sienna #B85C38 |
+| 2 | Night Forest | Deep forest #1A2E20 | Soft gold #C8922A |
+| 3 | Blueprint | Navy #0A1628 | Electric blue #1E6FFF |
+| 4 | Chalk & Iron | Near-black #111111 | Red #E63329 or Yellow #F2C94C |
+| 5 | Terracotta | Dark espresso #2A1810 | Terracotta #C4622D |
+| 6 | Slate & Copper | Cool slate #2D3748 | Copper #B87333 |
+| 7 | Monochrome +1 | Black/white only | One accent: sage, dusty rose, or marigold |
+| 8 | Deep Ocean | Dark teal #0D2B35 | Aquamarine #4DB6AC |
+
+Niche color filters (re-roll if you land outside these):
+- Trades → any roll valid (bold colors suit the niche)
+- Law/Medical → rolls 2, 3, 6, 7 preferred. Re-roll 5 (too warm/earthy)
+- Restaurant → rolls 1, 2, 5, 6 preferred. Re-roll 3 (too cold/tech)
+- Beauty/Wellness → rolls 2, 6, 7 preferred. Soft and warm only.
+- Retail/Service → any roll valid
+
+BANNED always: Purple/violet/indigo/lavender. Neon. Rainbow gradients.
+
+#### NAV STYLE (d4 — all niches)
+
+| Roll | Style |
+|------|-------|
+| 1 | **Full-width bar** — dark bg, logo left, links center, phone/CTA right |
+| 2 | **Off-canvas drawer** — minimal wordmark + hamburger, full-screen menu on tap |
+| 3 | **Sticky shrink** — large on load, compresses to slim bar on scroll |
+| 4 | **Floating island** — small solid pill, centered, appears after scroll |
+
+#### HERO TREATMENT (d4 — filtered by niche)
+
+| Roll | Type |
+|------|------|
+| 1 | **Full-bleed video** — Veo 2 loop behind dark overlay, text floats above |
+| 2 | **Split-screen** — dark panel + text/CTA left, Imagen 4 photo right |
+| 3 | **Layered parallax** — 3-depth image layers, text moves at 100% scroll speed |
+| 4 | **Editorial full-bleed image** — Imagen 4 fills hero, bold headline overlaid |
+
+Niche hero filters:
+- Trades → rolls 1, 2, 4 preferred. Roll 3 acceptable.
+- Law/Medical → rolls 2, 4 preferred. Avoid video unless it's tasteful office/city footage.
+- Restaurant → rolls 1, 3, 4 preferred. Food photography hero always wins.
+- Beauty/Wellness → rolls 2, 3, 4 preferred. Soft and personal.
+- Retail/Service → any roll valid.
+
+**Video hero note:** Always include static image fallback (`poster` on `<video>`). Compress to under 3MB. Use `ffmpeg -crf 28`.
+
+#### MOTION SIGNATURE (d6 — filtered by niche)
+
+Pick ONE, apply everywhere consistently.
+
+| Roll | Signature |
+|------|-----------|
+| 1 | **Clip-path wipe** — content slices in from right on scroll enter |
+| 2 | **Staggered float-up** — elements rise from 60px below, opacity 0→1, 0.15s stagger |
+| 3 | **Counter animation** — numbers count up from 0 on viewport enter. Trades/professional only. |
+| 4 | **Scale + blur reveal** — `scale(0.95) blur(8px)` → sharp on scroll enter |
+| 5 | **Line-by-line text reveal** — each line wipes in bottom-to-top, 80ms stagger |
+| 6 | **Horizontal marquee** — trust signals, stats, or service names scroll sideways infinitely |
+
+Niche motion filters:
+- Trades → rolls 1, 2, 3, 6 preferred
+- Law/Medical → rolls 1, 2, 5 preferred. Nothing flashy.
+- Restaurant → rolls 2, 4, 5 preferred. Soft and sensory.
+- Beauty/Wellness → rolls 2, 4, 5 preferred. Gentle only.
+- Retail/Service → any roll valid.
+
+All motion must respect: `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }`
+
+#### SECTION SEQUENCE (d4 — filtered by niche)
+
+The default sequence (hero → 3-col grid → horizontal band → contact form) is **BANNED**.
+
+| Roll | Sequence |
+|------|----------|
+| 1 | Hero → Services (tabbed or accordion) → Trust signals/stats → Testimonials → FAQ → Contact |
+| 2 | Hero → About/story → Services (alternating image+text) → Testimonials → Contact |
+| 3 | Hero → Trust badges → Services grid → Video/media section → Testimonials → FAQ → Contact |
+| 4 | Hero → Services lead (bento grid) → Stats bar → About split-screen → Testimonials → Contact |
+
+Niche section notes:
+- Trades → always include: phone number CTA in hero, free estimate CTA, years-in-business stat, license/BBB badge
+- Law/Medical → always include: practice areas, consultation CTA, years of experience, testimonials
+- Restaurant → always include: menu link or section, hours, location/map, reservations CTA
+- Beauty/Wellness → always include: services/treatment menu, booking CTA, gallery, reviews
+- Retail/Service → always include: service area, hours, phone, what makes them local/trusted
+
+---
+
+### Lock-In Comment Block
+
+Before writing any HTML, document your choices at the top of `index.html`:
+
+```html
+<!--
+DESIGN SYSTEM — [Business Name]
+Niche: [NICHE CATEGORY]
+Vibe: [one sentence describing the locked vibe]
+Color: [roll + system name + hex values]
+Nav: [roll + style name]
+Hero: [roll + type name]
+Motion: [roll + signature name]
+Sections: [roll + sequence description]
+-->
+```
+Die 4 Layout: [roll — personality name]
+Die 5 Motion: [roll — signature name]
+Die 6 Sections: [roll — sequence name]
+-->
+```
+
+**Diversity rule:** Check last 3 builds. If any two share the same Nav OR Hero OR Section Sequence, re-roll those dice.
+
+---
+
+## 📋 COMPLETION GATE — MANDATORY BEFORE DEPLOY
+
+**You cannot deploy until every item below is verified on disk.** This is not a suggestion. If any file is missing, CREATE IT before proceeding to Step 7 (Deploy).
+
+### Required Files Checklist
+
+Run this verification after building. Every box must be checked:
+
+```
+COMPLETION GATE — [Business Name]
+═══════════════════════════════════
+
+FILE CHECK (all must exist on disk):
+[ ] index.html              — Homepage
+[ ] about.html              — About page with team/credentials/story
+[ ] contact.html            — Contact page with address + map embed
+[ ] faq.html                — FAQ page with FAQPage JSON-LD schema
+[ ] services/[service-1].html — Individual service page #1
+[ ] services/[service-2].html — Individual service page #2
+[ ] sitemap.xml             — XML sitemap listing all pages
+[ ] robots.txt              — Robots file referencing sitemap
+
+CONTENT CHECK (verify in each file):
+[ ] Every page has unique <title> tag (keyword first, 50-60 chars)
+[ ] Every page has unique <meta name="description"> (150-160 chars)
+[ ] Every page has exactly one <h1> with target keyword
+[ ] Every page has JSON-LD LocalBusiness schema
+[ ] Every page has canonical tag
+[ ] Every page has OG tags (og:title, og:description, og:url)
+[ ] Every page has breadcrumb nav (Home > Category > Page)
+[ ] Nav links work across all pages (relative paths correct)
+[ ] Footer has links to all pages
+[ ] Internal linking: every page links to ≥3 other pages
+
+DESIGN CHECK:
+[ ] Die 6 section sequence matches roll (not the banned default)
+[ ] Dark background (not white/near-white)
+[ ] No emojis anywhere
+[ ] No purple anywhere
+[ ] Mobile responsive at 375px
+[ ] GSAP animations present and smooth
+
+ASSET CHECK:
+[ ] Hero video or hero image present in assets/
+[ ] Service images generated (≥3)
+[ ] All image paths resolve (no 404s)
+```
+
+### Verification Script
+
+Run this bash check before deploying:
+
+```bash
+#!/bin/bash
+BUILD_DIR="/tmp/rebuild/[business-name]"
+PASS=true
+
+echo "=== COMPLETION GATE ==="
+
+# Check required files
+for f in index.html about.html contact.html faq.html sitemap.xml robots.txt; do
+  if [ ! -f "$BUILD_DIR/$f" ]; then
+    echo "FAIL: Missing $f"
+    PASS=false
+  else
+    echo "OK: $f exists"
+  fi
+done
+
+# Check at least 2 service pages exist
+SERVICE_COUNT=$(find "$BUILD_DIR" -name "*.html" -path "*/services/*" 2>/dev/null | wc -l)
+if [ "$SERVICE_COUNT" -lt 2 ]; then
+  echo "FAIL: Only $SERVICE_COUNT service pages (need ≥2)"
+  PASS=false
+else
+  echo "OK: $SERVICE_COUNT service pages found"
+fi
+
+# Check every HTML file has a <title> tag
+for f in $(find "$BUILD_DIR" -name "*.html"); do
+  if ! grep -q "<title>" "$f"; then
+    echo "FAIL: $f missing <title> tag"
+    PASS=false
+  fi
+done
+
+# Check no white backgrounds
+for f in $(find "$BUILD_DIR" -name "*.html" -o -name "*.css"); do
+  if grep -qE 'background(-color)?:\s*#(FFFFFF|ffffff|FFF|fff|F5F5F5|FAFAFA)' "$f"; then
+    echo "FAIL: $f has white/near-white background"
+    PASS=false
+  fi
+done
+
+if [ "$PASS" = true ]; then
+  echo "=== GATE PASSED — CLEAR TO DEPLOY ==="
+else
+  echo "=== GATE FAILED — FIX ISSUES BEFORE DEPLOYING ==="
+  exit 1
+fi
+```
+
+**If the gate fails, go back to Step 5 and build the missing pages. Do NOT skip to deploy.**
+
+---
+
+## Building the Remake — Multi-Page Architecture
+
+### Required Page Structure
+
+Every rebuild produces this file tree. No exceptions:
+
+```
+[business-name]/
+├── index.html                 ← Homepage (from Stitch, expanded by Claude Code)
+├── about.html                 ← About + team + credentials (E-E-A-T)
+├── contact.html               ← Contact + address + map embed
+├── faq.html                   ← FAQ with FAQPage JSON-LD
+├── services/
+│   ├── [service-1].html       ← Individual service page
+│   ├── [service-2].html       ← Individual service page
+│   └── [service-3].html       ← Individual service page (if applicable)
+├── assets/
+│   ├── stitch-preview.jpg     ← Stitch screenshot (used in forgeaiseo.com showcase)
+│   ├── hero-main.jpg          ← Nano Banana hero image
+│   ├── service-1.jpg          ← Service image
+│   ├── service-2.jpg          ← Service image
+│   └── service-3.jpg          ← Service image
+├── css/
+│   └── styles.css             ← Shared stylesheet (mobile-first, extracted from Stitch output)
+├── js/
+│   └── main.js                ← Shared GSAP + interactions
+├── sitemap.xml                ← XML sitemap with all pages
+└── robots.txt                 ← Points to sitemap
+```
+
+### Shared Components Across Pages
+
+Every page shares these elements (put in a consistent structure):
+
+**Nav:** Same nav on every page. Use the Die 1 roll style. Links: Home, Services, About, Contact, FAQ. CTA button in nav.
+
+**Footer:** Same footer on every page. Business name, address, phone, email. Links to all pages. Hours of operation. Copyright.
+
+**CSS:** One shared `styles.css` loaded by all pages. Mobile-first breakpoints at bottom.
+
+**JS:** One shared `main.js` for GSAP ScrollTrigger, nav interactions, animations.
+
+### Page-by-Page Build Instructions
+
+**index.html — Homepage**
+- Follow your Die 6 section sequence EXACTLY
+- Include the Die 3 hero treatment
+- Apply Die 5 motion signature throughout
+- Link to all service pages, about, contact, FAQ
+- JSON-LD: LocalBusiness schema
+
+**services/[service].html — Individual Service Pages**
+- One page per major service the business offers (minimum 2, ideally 3-5)
+- Each page: unique H1 with "[Service] in [City]", 300+ words of content, relevant image, CTA to contact, breadcrumb nav
+- JSON-LD: Service schema
+- Internal links to related services + homepage
+
+**about.html — About Page**
+- Business story, founding date, team (if available)
+- Credentials, certifications, awards
+- Statistics: years in business, clients served, reviews count
+- Photo (real from site, or AI-generated professional portrait)
+- JSON-LD: Organization schema
+
+**contact.html — Contact Page**
+- Business name, full address, phone, email
+- Google Maps embed (use embed URL from Google Maps)
+- Contact form (name, email, phone, message)
+- Hours of operation
+- JSON-LD: LocalBusiness with geo coordinates
+
+**faq.html — FAQ Page**
+- Minimum 10 questions relevant to the niche
+- Direct-answer format (answer in first sentence, then expand)
+- JSON-LD: FAQPage schema (this is a rich result opportunity)
+- Internal links to relevant service pages within answers
+
+### Build Process
+
+Build ALL pages before moving to the Completion Gate. Suggested order:
+
+1. Create `css/styles.css` with full design system (colors, typography, spacing, mobile breakpoints)
+2. Create `js/main.js` with GSAP setup, ScrollTrigger, nav interactions
+3. Build `index.html` with Die 6 section sequence
+4. Build `about.html`
+5. Build `contact.html`
+6. Build each `services/[service].html`
+7. Build `faq.html`
+8. Generate `sitemap.xml` listing all pages
+9. Create `robots.txt` pointing to sitemap
+10. Run Completion Gate
 
 ---
 
@@ -51,1741 +801,543 @@ metadata:
 
 ### Why This Works
 
-- **Market**: 60%+ of small businesses have outdated websites (2010 design, no animations, broken mobile, slow)
-- **Value**: A $10K rebuild adds 30-50% to their annual revenue within 6 months (better CTAs, conversions, trust)
+- **Market**: 60%+ of small businesses have outdated websites
+- **Value**: A $10K rebuild adds 30-50% to annual revenue within 6 months
 - **Urgency**: They lose 2-3 leads/day to better-designed competitors
-- **Margin**: 85-90% profit once the system is dialed in (low marginal cost, high perceived value)
-- **Speed**: You can rebuild a site in 1-2 days with Claude Code + GSAP
+- **Margin**: 85-90% profit (low marginal cost, high perceived value)
+- **Speed**: Full multi-page rebuild in 1-2 days with this pipeline
 
 ### Pricing Tiers
 
-| Tier | Price | Build Time | Includes |
-|------|-------|-----------|----------|
-| **Basic** | $2,500 | 8 hours | Clean design, mobile responsive, 2-3 basic animations, deployed to Netlify |
-| **Pro** | $5,000 | 16 hours | + GSAP scroll animations, testimonial carousel, video background, parallax effects, Core Web Vitals optimized |
-| **Premium** | $10,000 | 24 hours | + Three.js 3D animations, advanced micro-interactions, custom cursor effects, mesh gradients, grain overlays, full SEO optimization, ongoing support |
+| Tier | Price | Includes |
+|------|-------|----------|
+| **Basic** | $2,500 | Clean multi-page design, mobile responsive, basic animations, Netlify deploy |
+| **Pro** | $5,000 | + GSAP scroll animations, video hero, testimonial carousel, Core Web Vitals optimized |
+| **Premium** | $10,000 | + AI video scroll sequences, advanced micro-interactions, full SEO + GEO, ongoing support |
 
 ### Revenue Projection
 
-```
-Month 1:
-- 10 cold emails/day × 20 days = 200 emails
-- 30% open rate = 60 opens
-- 10% meeting rate = 6 demos
-- 50% close rate = 3 deals
-- Average price: $7,500 → $22,500 revenue
-
-Month 2-3 (Refined):
-- Same volume, 35% open rate, 15% meeting, 60% close
-- 4.2 deals/month × $7,500 = $31,500/month
-
-Year 1 (Growth):
-- Ramp up to 20 emails/day
-- Improve conversions through iterations
-- Estimated: $180K-250K annual revenue (at 85% profit)
-```
+- Month 1: 200 emails → 6 demos → 3 deals × $7,500 = $22,500
+- Month 2-3: Refined → 4.2 deals/month × $7,500 = $31,500/month
+- Year 1: Ramp to 20 emails/day → $180K-250K annual at 85% profit
 
 ---
 
-## Pipeline Overview
+## Finding & Qualifying Targets
 
-**The 10-step process:**
+### Top Niches
 
-1. **Find Targets** → Scrape local businesses, identify outdated sites
-2. **Analyze & Qualify** → Use Firecrawl to analyze existing site, assess potential
-3. **Extract Assets** → Colors, fonts, copy, testimonials, structure
-4. **Build Remake (Iteration 1)** → Basic structure + hero with GSAP animations
-5. **Build Remake (Iteration 2)** → Add scroll effects, service cards, parallax
-6. **Build Remake (Iteration 3)** → Testimonials carousel, counter animations, gallery
-7. **Build Remake (Iteration 4)** → Optional: 3D elements, micro-interactions, polish
-8. **Deploy** → GitHub + auto-deploy to Netlify (live preview link)
-9. **Outreach** → Cold email via AgentMail with live preview
-10. **Close** → Follow-up sequence, objection handling, payment collection
-
----
-
-## Step 1: Finding & Qualifying Targets
-
-### Search Strategy
-
-Use web_search to find local businesses. Target niches with:
-- Active local presence (Google reviews, Yelp, good ratings)
-- Local service focus (not national/enterprise)
-- High transaction value (enough to afford a rebuild)
-
-**Top niches (highest ROI):**
-1. **Dentists** (avg revenue $500K-2M, poor tech adoption, tech-averse owners)
-2. **Restaurants** (urgent need, updates drive foot traffic, owners value design)
-3. **Law Firms** (high margins, outdated sites endemic, serious buyers)
-4. **Real Estate Agents** (portfolio-heavy, visual design crucial, easy wins)
-5. **Medical Practices** (insurance-backed revenue, professional image critical)
-6. **Contractors/Plumbers** (high service area, trust-based selling, poor websites)
-7. **Salons/Spas** (visual-first businesses, Instagram-ready sites convert well)
-8. **Accountants/CPAs** (seasonal revenue, need rebrand before tax season)
+1. Dentists (avg revenue $500K-2M, poor tech adoption)
+2. Restaurants (urgent need, visual design crucial)
+3. Law Firms (high margins, outdated sites endemic)
+4. Real Estate Agents (portfolio-heavy, visual-first)
+5. Medical Practices (insurance-backed, professional image critical)
+6. Contractors/Plumbers (trust-based, poor websites)
+7. Salons/Spas (visual-first, Instagram-ready converts)
+8. Accountants/CPAs (seasonal, need rebrand before tax season)
 
 ### Search Queries
 
 ```
-# Dentists
-"dentist near [CITY]"
-"family dental [CITY]"
-"emergency dental [CITY]"
-
-# Restaurants
-"restaurant [CITY]"
-"best [CUISINE] [CITY]"
-"[CUISINE] restaurant [CITY]"
-
-# Law Firms
-"attorney [CITY]"
-"law firm [CITY]"
-"personal injury lawyer [CITY]"
-
-# Real Estate
-"real estate agent [CITY]"
-"realtors near [CITY]"
-
-# Medical
-"doctor near [CITY]"
-"urgent care [CITY]"
-"dentist [CITY]"
-
-# Contractors
-"plumber [CITY]"
-"electrician [CITY]"
-"contractor [CITY]"
+"[niche] near [city]"
+"[niche] [city]"
+"best [niche] [city]"
+"[niche] [city] reviews"
 ```
 
 ### Qualification Rubric
 
-Score each prospect on:
+Score each prospect (target: 70+ to email, 85+ priority):
 
-| Criterion | Weight | Yes | No | Notes |
-|-----------|--------|-----|----|----|
-| **Google Reviews** | 20% | 4.5+ stars, 50+ reviews | < 4 stars or < 20 reviews | High reviews = successful business |
-| **Website Exists** | 10% | Has website | No website | Must exist to rebuild |
-| **Design Quality** | 20% | Looks pre-2015 (dated fonts, colors, layout) | Modern (2020+) | Outdated = high ROI |
-| **Mobile Responsiveness** | 15% | Broken, not mobile-friendly | Mobile-optimized | Test on phone |
-| **Animations/Effects** | 10% | Zero animations, static | Already animated | Easy to pitch if none |
-| **Contact Info Visible** | 10% | Email/phone easy to find | Hidden, requires form | Need easy outreach |
-| **Business Type** | 15% | One of top 7 niches | Other service | Higher close rates |
-| **Local Focus** | 10% | Local only (not national chain) | National brand | Can't pitch to corporate |
+| Criterion | Weight |
+|-----------|--------|
+| Google Reviews 4.5+, 50+ reviews | 20% |
+| Website exists | 10% |
+| Design looks pre-2018 | 20% |
+| Mobile broken or bad | 15% |
+| Zero animations | 10% |
+| Contact info easily findable | 10% |
+| Top niche | 15% |
 
-**Qualification threshold: 70+ points = cold email, 85+ points = priority outreach**
+---
 
-### Script: find-targets.sh
+## Site Analysis & Scraping
+
+### NAP Lock — Before Any Code
 
 ```bash
-#!/bin/bash
-# Usage: ./find-targets.sh "dentist" "chicago" 10
+# Extract phone numbers
+curl -sL "https://[TARGET]" | grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s][0-9]{4}\b' | sort -u
 
-NICHE=$1
-CITY=$2
-LIMIT=${3:-10}
+# Extract all real photos (run alongside Firecrawl)
+curl -sL "$URL" | grep -oE 'src="(https://[^"]+\.(jpg|jpeg|png|webp))"' | sed 's/src="//;s/"//' | sort -u
 
-echo "=== Finding $NICHE targets in $CITY ==="
-echo "This will:"
-echo "1. Search for businesses"
-echo "2. Extract contact info"
-echo "3. Analyze website quality"
-echo "4. Score qualification"
-echo ""
-
-# Create results file
-OUTPUT_FILE="targets_${NICHE}_${CITY}_$(date +%Y%m%d).json"
-> "$OUTPUT_FILE"
-
-echo "[]" > "$OUTPUT_FILE"
-
-echo "Starting search..."
-# This is called from Claude Code / web_search
-# For each result:
-#   - Extract: business name, address, phone, website
-#   - Run Firecrawl analysis on website
-#   - Score qualification (see rubric above)
-#   - Save to JSON
-
-echo "Complete. Results saved to: $OUTPUT_FILE"
+# For WordPress sites specifically
+curl -sL "$URL" | grep -oE 'https://[a-zA-Z0-9._-]+/wp-content/uploads/[A-Za-z0-9/_.-]+\.(jpg|jpeg|png|webp)' | grep -v '[0-9]x[0-9]' | sort -u
 ```
 
----
-
-## Step 2: Site Analysis & Scraping
-
-### Firecrawl Integration
-
-Use Firecrawl to extract the existing site's structure, design, and copy. This becomes the blueprint for what to rebuild.
-
-**Extract these fields:**
-
-```json
-{
-  "site_url": "https://example-dentist.com",
-  "business_name": "Bright Smile Dental",
-  "niche": "dental",
-  "contact": {
-    "phone": "(312) 555-0123",
-    "email": "contact@brightsmile.com",
-    "address": "123 Main St, Chicago, IL 60601"
-  },
-  "site_analysis": {
-    "design_score": 2.5,
-    "mobile_score": 1.0,
-    "animation_score": 0,
-    "load_time_seconds": 4.2,
-    "cta_clarity": 1.0,
-    "pages_identified": [
-      "home",
-      "services",
-      "about",
-      "testimonials",
-      "contact"
-    ],
-    "missing_elements": [
-      "hero_animation",
-      "scroll_effects",
-      "video_background",
-      "testimonial_carousel",
-      "mobile_optimization",
-      "fast_load_times",
-      "3d_elements",
-      "clear_above_fold_cta"
-    ],
-    "conversion_blockers": [
-      "No clear CTA above fold",
-      "Desktop only (mobile broken)",
-      "No testimonials visible",
-      "Contact form broken/slow",
-      "Loads in 4+ seconds (poor UX)"
-    ]
-  },
-  "brand_assets": {
-    "color_palette": [
-      "#2c3e50",
-      "#e74c3c",
-      "#ffffff"
-    ],
-    "primary_font": "Arial (generic)",
-    "secondary_font": "Times New Roman",
-    "logo_url": "https://...",
-    "logo_extracted": true
-  },
-  "copy": {
-    "headline": "Welcome to Bright Smile Dental",
-    "subheadline": "Your trusted dental practice since 2005",
-    "services": [
-      "Cleanings",
-      "Root Canals",
-      "Teeth Whitening",
-      "Implants"
-    ],
-    "testimonial_count": 3,
-    "about_text_length": 247
-  },
-  "recommendations": [
-    "Replace Arial with Poppins/Inter for modern feel",
-    "Add full-screen hero with video background",
-    "Animate services cards on scroll",
-    "Create testimonial carousel (currently static)",
-    "Mobile optimization is critical (currently broken)",
-    "Add counter animations (years in business, patients served)",
-    "Replace generic CTA with action-oriented button",
-    "Add loading optimization (currently 4.2s LCP)"
-  ]
-}
-```
-
-### Script: scrape-site.sh
+### Platform Detection
 
 ```bash
-#!/bin/bash
-# Usage: ./scrape-site.sh "https://example-dentist.com"
-
-URL=$1
-DOMAIN=$(echo $URL | sed 's/https\?:\/\///g' | cut -d/ -f1)
-
-echo "=== Scraping $URL ==="
-
-# Call Firecrawl API to extract site data
-# Output: full HTML, markdown, JSON metadata
-
-# Extract:
-# - Colors from CSS
-# - Fonts from @import statements
-# - Logo URL
-# - All copy/headlines
-# - Image URLs
-# - Current animations (usually none)
-# - Mobile responsiveness status
-
-# Save analysis to JSON file
-OUTPUT_FILE="${DOMAIN}_analysis.json"
-
-# This is called from Claude Code
-echo "Analysis saved to: $OUTPUT_FILE"
+curl -sL "$URL" | grep -i "wp-content\|uenicdn\|squarespace\|wix\|shopify\|webflow" | head -5
 ```
+
+### Firecrawl Extraction
+
+Use Firecrawl for structured content (copy, services, testimonials). But always raw-grep for images too — Firecrawl markdown strips image URLs.
 
 ---
 
-## Step 3: Building the Premium Remake
+## Animation Stack & Premium Effects
 
-### Core Requirements for $10K Quality
+### GSAP Patterns
 
-Every rebuild must deliver these $10K-quality elements:
-
-#### Hero Section (10% of sales impact)
-
-- **Full-screen video background** OR 3D WebGL animation
-  - Video: Relevant to business (e.g., dentist = dental chair, restaurant = food prep)
-  - 3D: Floating geometric shapes, tooth animations, scales of justice, etc.
-- **Animated headline** with staggered word reveal (0.3s per word)
-- **Parallax scrolling effect** (background moves at 0.5x scroll speed)
-- **CTA button** with:
-  - Glow animation on page load
-  - Scale + color shift on hover
-  - Ripple effect on click
-  - Clear action text (Book Now, Get Quote, Schedule Call)
-- **Mobile-optimized** (responsive 375px to 1920px)
-- **Performance:** LCP < 2.5s, no jank
-
-#### Scroll Effects (20% of sales impact)
-
-- **GSAP ScrollTrigger** on all major sections
-- **Fade-in reveals** as user scrolls (opacity: 0 → 1)
-- **Slide-up animations** on cards (y: 50px → 0)
-- **Counter animations** (Years: 0 → 25, Clients: 0 → 500)
-- **Staggered delays** between elements (0.1s-0.2s apart)
-- **Parallax layers** (background slower than foreground)
-- **No janky animations** (must maintain 60fps)
-
-#### Testimonials Section (15% of sales impact)
-
-- **Auto-rotating carousel** (every 5 seconds)
-- **Smooth slide transitions** (0.6s duration)
-- **Display:** Quote, author name, title, 5-star rating, avatar
-- **Manual navigation:** Left/right arrows
-- **Mobile-responsive** (single column on mobile)
-- **Real testimonials** (extracted from Google/Yelp)
-
-#### Services/Products Cards (15% of sales impact)
-
-- **CSS Grid layout** (3 columns desktop, 1 mobile)
-- **Cards with hover effects:**
-  - Subtle shadow increase (0px → 10px)
-  - Scale increase (1.0 → 1.02)
-  - Color shift on title
-- **Icons with animations** (rotate on hover)
-- **Description text** (clear, benefit-focused)
-- **Responsive** to all screen sizes
-
-#### About / Counter Section (10% of sales impact)
-
-- **Counter animations** using GSAP
-  - "20+ Years Experience" (0 → 20 count)
-  - "500+ Happy Clients" (0 → 500 count)
-  - Triggered on scroll
-- **Professional image**
-- **Founder/business story** (2-3 sentences)
-
-#### Gallery Section (5% of sales impact)
-
-- **CSS Grid** (6 images, responsive)
-- **Hover effects:**
-  - Zoom (scale 1.0 → 1.05)
-  - Shadow increase
-  - Smooth transition (0.3s)
-
-#### Contact/CTA Section (10% of sales impact)
-
-- **Form** OR **direct contact** (phone, email, calendar link)
-- **CTA button** (large, prominent, contrasting color)
-- **Social proof** ("Join 500+ happy customers")
-
-#### Technical Requirements (15% of sales impact)
-
-- **Core Web Vitals optimized:**
-  - LCP (Largest Contentful Paint) < 2.5s
-  - FID (First Input Delay) < 100ms
-  - CLS (Cumulative Layout Shift) < 0.1
-- **Mobile-first responsive** (375px minimum width)
-- **JSON-LD schema markup** (LocalBusiness, Service, Review)
-- **OG meta tags** for social sharing
-- **Lazy loading** for images below fold
-- **CDN-ready structure** (for Netlify/Netlify)
-- **No console errors** (tested in Chrome DevTools)
-- **Works in:** Chrome, Safari, Firefox, Edge
-
-### Claude Code Prompt Structure
-
-Use this exact framework when spawning Claude Code for the 4-iteration rebuild process:
-
-#### **Iteration 1: Basic Structure + Hero Section**
-
-```
-You are a premium web designer building a $10K website for a [BUSINESS_TYPE].
-
-Project Brief:
-- Business: [BUSINESS_NAME]
-- Niche: [DENTIST/LAWYER/RESTAURANT/REALTOR/etc]
-- Current site: [ANALYZED_URL]
-- Target audience: [DESCRIPTION]
-- Brand colors: [HEX_COLORS: e.g., #2c3e50, #e74c3c, #ffffff]
-- Brand tone: [FORMAL/CASUAL/PLAYFUL/LUXURY/etc]
-
-Build ONLY the hero section for this first iteration.
-
-Requirements:
-1. HTML/CSS/JS single file (no build tools, no npm)
-2. Hero: Full screen (100vh), full-width video background OR 3D canvas
-3. Video: [DESCRIPTION] (e.g., "dental chair opening/closing smoothly") OR 3D floating shapes
-4. Headline: "[BUSINESS_NAME] - [TAGLINE]"
-   - Must be animated (words appear one-by-one with 0.3s stagger)
-   - Use GSAP library (include from cdnjs)
-5. Subheadline: "[SUBHEADLINE]" (fades in after headline)
-6. CTA Button:
-   - Text: "[CTA_TEXT]" (e.g., "Book Now", "Get Quote", "Schedule Consultation")
-   - Link: #services
-   - Color: [ACCENT_COLOR]
-   - Glow animation on load
-   - Scale on hover
-7. Responsive: 375px to 1920px
-8. Typography:
-   - Headline font: Poppins or Clash Display (Google Fonts)
-   - Subheadline: Inter (Google Fonts)
-   - Modern, premium feel
-9. Performance:
-   - Images optimized (< 100KB each)
-   - LCP < 2.5s target
-   - No console errors
-
-This is ITERATION 1 only. Build the hero perfectly. I will iterate and add more sections.
-
-Make every detail count. This is a $10K pitch—it needs to wow.
-```
-
-#### **Iteration 2: Add Animations + Services + Parallax**
-
-```
-Improve the website. Keep the hero, add new sections:
-
-Changes:
-1. GSAP + ScrollTrigger setup:
-   - Register ScrollTrigger plugin
-   - Optimize animation performance
-2. Services section below hero:
-   - 3 cards (grid layout, responsive)
-   - Each card: icon, title, description
-   - Cards fade + slide up on scroll (trigger: "top 80%")
-   - Stagger: 0.2s between cards
-   - Hover: shadow increase, slight scale
-3. Parallax background enhancement:
-   - Background moves at 0.5x scroll speed
-   - Smooth parallax (scrub: false for performance)
-4. Counter/stats section (optional):
-   - "20+ Years" → animate count 0→20
-   - "500+ Clients" → animate count 0→500
-   - Triggered on scroll
-5. Improvements:
-   - Add scroll indicator (arrow at bottom of hero)
-   - Bouncing animation on arrow
-   - Arrow fades on scroll
-   - Add smooth scroll behavior (CSS)
-
-Keep brand colors: [COLORS]
-Ensure all animations smooth (60fps, no stutter).
-Test on mobile (responsive is critical).
-
-This is ITERATION 2. More polish coming next.
-```
-
-#### **Iteration 3: Testimonials + Gallery + Polish**
-
-```
-Add premium sections to website:
-
-Changes:
-1. Testimonials carousel:
-   - 5-7 testimonials (I'll provide testimonial data)
-   - Auto-rotate every 5 seconds
-   - Smooth slide transition (0.6s cubic-bezier)
-   - Show: quote, author name, title, 5-star rating (⭐ emojis), avatar
-   - Navigation: left/right arrows for manual control
-   - Responsive: single column mobile, 2-column tablet, carousel desktop
-2. Gallery section:
-   - CSS Grid: 6 images (3x2 desktop, responsive)
-   - Hover: zoom + shadow (1.0 → 1.05 scale, 0.3s transition)
-   - Lazy loading: load images only when visible
-3. About section enhancement:
-   - Professional photo (left) + text (right, responsive)
-   - Story: 2-3 sentences about business
-   - Trust badges: Certifications, awards, years in business
-4. Advanced animations:
-   - Text splitting: Split headlines into words, animate each
-   - Stagger reveals: 0.15s between items
-   - ScrollTrigger markers: None in production (remove)
-5. Mobile optimization:
-   - Touch-friendly: Buttons 48x48px minimum
-   - Stack everything single-column below 768px
-   - No horizontal scroll
-
-Testimonials data:
-[PROVIDE 5-7 REAL TESTIMONIALS FROM GOOGLE/YELP]
-
-Brand colors: [COLORS]
-All animations should be smooth and professional.
-
-This is ITERATION 3. Final polish in the next round.
-```
-
-#### **Iteration 4: Premium Polish + 3D (Optional) + Performance**
-
-```
-Final premium polish for production deployment:
-
-Changes:
-1. Three.js 3D animation (OPTIONAL, if budget allows):
-   - Add 3D background element in hero (or separate section)
-   - Example: Rotating dental tooth, rotating scales of justice, floating geometric shapes
-   - Performance: Optimize for 60fps on desktop, 30fps mobile
-   - Fallback: Static image if WebGL unavailable
-2. Advanced micro-interactions:
-   - Logo fade-in on page load (0.8s)
-   - Menu items stagger-reveal
-   - CTA button: ripple effect on click
-   - Link hover: underline animation
-3. Custom cursor (optional):
-   - Follow mouse on hover
-   - Change on CTA buttons
-4. Mesh gradient backgrounds:
-   - Use CSS mesh gradient (or SVG filter)
-   - Apply to About or Stats section
-   - Subtle, premium feel
-5. Performance optimization:
-   - Image compression: TinyPNG + ImageOptim (< 100KB each)
-   - CSS/JS minification
-   - Remove unused libraries
-   - Lazy load below-fold images
-   - Set Cache-Control headers (ready for Netlify)
-6. SEO implementation:
-   - LocalBusiness JSON-LD schema
-   - Service schema markup
-   - Review/rating schema
-   - Meta tags (title, description, OG)
-   - Canonical URL
-7. Accessibility (WCAG AA):
-   - Color contrast ≥ 4.5:1 on text
-   - Alt text on all images
-   - Keyboard navigation (tab through links)
-   - Focus states visible
-8. Browser testing:
-   - Chrome, Safari, Firefox, Edge
-   - iPhone 12, 14 Pro
-   - Android (Samsung Galaxy)
-9. Final checks:
-   - No console errors
-   - No 404s on images
-   - All links working
-   - Forms functional (if present)
-   - Social share cards test well (OG tags)
-
-Result: Production-ready single HTML file, optimized for Netlify deployment.
-
-This is ITERATION 4. Ready to deploy and pitch!
-```
-
-### Key Technical Stack
-
-**Why this approach:**
-
-| Technology | Why | Alternative | Why Not |
-|-----------|-----|-----------|---------|
-| **HTML/CSS/JS vanilla** | Full control, no build step, instant updates | React/Next.js | Overkill for landing page, slower to iterate |
-| **Tailwind (CDN)** | Instant styling, modern utilities, rapid prototyping | Bootstrap | Outdated feel, verbose, bloated CSS |
-| **GSAP** | Industry standard (Netflix, Apple use it), smooth animations | Framer Motion | Requires React, adds complexity |
-| **Three.js (CDN)** | Most popular 3D lib, 20K+ GitHub stars, mature | Babylon.js | Slightly heavier, less community |
-| **Netlify** | Auto-deploy from GitHub, serverless functions, instant scaling | Netlify | Similar, but Netlify has better Next.js integration |
-
----
-
-## Step 4: Animation Stack & Premium Effects
-
-### GSAP Animation Patterns
-
-**Text reveal (hero headline):**
-
-```javascript
-// Split headline into words
-const words = document.querySelectorAll('.headline-word');
-
-// Animate each word with stagger
-gsap.to(words, {
-  duration: 0.8,
-  opacity: 1,
-  y: 0,
-  stagger: 0.15,
-  delay: 0.3,
-  ease: "power3.out"
-});
-```
-
-**Scroll-triggered card reveal:**
-
+**Text reveal (char-by-char stagger):**
 ```javascript
 gsap.registerPlugin(ScrollTrigger);
 
-gsap.to(".service-card", {
-  scrollTrigger: {
-    trigger: ".services-section",
-    start: "top 80%",
-    end: "bottom 20%",
-    markers: false // Set to true for debugging
-  },
-  duration: 0.8,
-  opacity: 1,
-  y: 0,
-  stagger: 0.2,
+// Hero headline
+gsap.to('.headline-word', {
+  duration: 0.8, opacity: 1, y: 0,
+  stagger: 0.15, delay: 0.3, ease: "power3.out"
+});
+```
+
+**Scroll-triggered cards:**
+```javascript
+gsap.to(".card", {
+  scrollTrigger: { trigger: ".section", start: "top 80%" },
+  duration: 0.8, opacity: 1, y: 0, stagger: 0.2, ease: "power3.out"
+});
+```
+
+**Counter animation:**
+```javascript
+gsap.to(el, {
+  textContent: targetValue, duration: 2,
+  snap: { textContent: 1 },
+  scrollTrigger: { trigger: el, start: "top 80%" },
   ease: "power3.out"
 });
 ```
 
-**Parallax background:**
-
+**Horizontal pinned scroll gallery:**
 ```javascript
-gsap.to(".hero-bg", {
-  scrollTrigger: ".hero",
-  duration: 1,
-  y: -100, // Moves slower than scroll
-  ease: "none",
-  transformOrigin: "center center"
+gsap.to(".h-gallery", {
+  scrollTrigger: {
+    trigger: ".gallery-section", start: "top top",
+    end: () => "+=" + (gallery.scrollWidth - gallery.clientWidth) * 1.5,
+    scrub: 1, pin: true
+  },
+  x: () => -(gallery.scrollWidth - gallery.clientWidth), ease: "none"
 });
 ```
 
-**Counter animation (count up):**
-
+**Clip-path reveal:**
 ```javascript
-const animateCounter = (element, targetValue, duration = 2) => {
-  gsap.to(element, {
-    textContent: targetValue,
-    duration: duration,
-    snap: { textContent: 1 },
-    scrollTrigger: {
-      trigger: element,
-      start: "top 80%"
-    },
-    ease: "power3.out"
-  });
-};
-
-// Usage
-animateCounter(document.querySelector('.years'), 25);
-animateCounter(document.querySelector('.clients'), 500);
+gsap.from(".img", { clipPath: "inset(0 100% 0 0)", duration: 1.2 });
 ```
 
-**Button glow animation:**
+### Easing Reference
 
-```javascript
-gsap.to(".cta-button", {
-  duration: 2,
-  boxShadow: "0 0 30px rgba(255, 100, 50, 0.8)",
-  repeat: -1,
-  yoyo: true,
-  ease: "sine.inOut"
-});
-```
-
-**Hover scale + color shift:**
-
-```javascript
-document.querySelectorAll('.service-card').forEach(card => {
-  card.addEventListener('mouseenter', () => {
-    gsap.to(card, {
-      duration: 0.3,
-      scale: 1.02,
-      boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-      ease: "power3.out"
-    });
-    gsap.to(card.querySelector('h3'), {
-      duration: 0.3,
-      color: "#e74c3c" // Brand accent
-    });
-  });
-  
-  card.addEventListener('mouseleave', () => {
-    gsap.to(card, {
-      duration: 0.3,
-      scale: 1,
-      boxShadow: "0 5px 15px rgba(0,0,0,0.1)"
-    });
-    gsap.to(card.querySelector('h3'), {
-      duration: 0.3,
-      color: "#2c3e50"
-    });
-  });
-});
-```
-
-**Testimonial carousel auto-rotation:**
-
-```javascript
-let currentSlide = 0;
-const totalSlides = document.querySelectorAll('.testimonial').length;
-
-const rotateTestimonials = () => {
-  const carousel = document.querySelector('.testimonials-carousel');
-  gsap.to(carousel, {
-    duration: 0.8,
-    x: -currentSlide * 100 + '%',
-    ease: "power3.inOut"
-  });
-};
-
-setInterval(() => {
-  currentSlide = (currentSlide + 1) % totalSlides;
-  rotateTestimonials();
-}, 5000); // Rotate every 5 seconds
-```
-
-### Awwwards-Level Design Patterns
-
-**Mesh gradient background:**
-
-```css
-.about-section {
-  background: linear-gradient(
-    135deg,
-    #667eea 0%,
-    #764ba2 25%,
-    #f093fb 50%,
-    #4facfe 75%,
-    #00f2fe 100%
-  );
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-```
-
-**Glassmorphism effect:**
-
-```css
-.glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-}
-```
-
-**Grain texture overlay (premium feel):**
-
-```css
-.hero::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    url('data:image/svg+xml,...'); /* SVG noise filter */
-  opacity: 0.03;
-  pointer-events: none;
-}
-```
-
-**Easing cheat sheet (GSAP):**
-
-| Easing | Feel | Use Case |
-|--------|------|----------|
-| `power3.out` | Natural deceleration | Default for most animations (hero reveals) |
-| `back.out(1.7)` | Slight overshoot, playful | Button clicks, interactive elements |
-| `elastic.out(1, 0.3)` | Bouncy, fun | Icons, badges, micro-interactions |
-| `expo.out` | Fast start, dramatic slowdown | Page transitions, major reveals |
-| `sine.inOut` | Smooth, balanced | Hover effects, loops (glow animations) |
-| `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Custom bounce | Advanced tweaking |
+| Easing | Use |
+|--------|-----|
+| `power3.out` | Default for most reveals |
+| `back.out(1.7)` | Button clicks, playful |
+| `elastic.out(1, 0.3)` | Icons, badges |
+| `expo.out` | Major reveals |
+| `sine.inOut` | Hover effects, loops |
 
 ---
 
-## Step 5: Anti-Slop Design Checklist
+## Anti-Slop Design Checklist
 
-**❌ NEVER do these (AI slop signals):**
+### NEVER (instant fail):
+- Inter/Roboto/Arial as default font
+- Purple gradient or purple accent of any shade
+- Uniform rounded corners on everything
+- Center-only layout with no personality
+- ~~Hero → 3-column features → horizontal band → contact form~~ (BANNED SEQUENCE)
+- Stock illustrations of diverse teams
+- No animations (static 2010 design)
+- No clear CTA above fold
 
-- [ ] Using Inter/Roboto/Arial as default font (generic, boring)
-- [ ] Purple gradient on white background (trendy trash)
-- [ ] Uniform rounded corners on everything (cheap, lazy)
-- [ ] Center-only layout (no personality, safe but boring)
-- [ ] Generic hero + 3-column features layout (been done 10M times)
-- [ ] Same shadow on every card (inconsistent design)
-- [ ] Stock illustrations of diverse teams (cringey, overused)
-- [ ] No animations (2010 design)
-- [ ] Mobile-unfriendly (lose 60% of users)
-- [ ] Slow load times (> 3s LCP = bounces)
-- [ ] No clear CTA above fold (conversion killer)
-- [ ] Testimonials from nobody (they need real names/photos)
-- [ ] No color hierarchy (makes everything equally important = nothing stands out)
-- [ ] Using system fonts only (Arial/Helvetica)
+### ALWAYS:
+- Distinctive font pairing (Display: Poppins, Clash Display, Satoshi, Playfair, Monument; Body: Inter, DM Sans, Work Sans, Outfit)
+- Dominant 60% + Secondary 30% + Accent 10% color distribution
+- Asymmetric or grid-breaking elements
+- Textured backgrounds (gradient mesh, noise overlay at 0.03 opacity, geometric patterns)
+- Staggered reveal on page load
+- Unexpected hover/scroll interactions
 
-**✅ ALWAYS do these (premium design signals):**
+### Anti-Slop Enforcement — Active Verification
 
-- [ ] Pick an extreme tone:
-  - Brutalism (raw, heavy fonts, bold colors)
-  - Minimalism (white space, 2-3 colors max)
-  - Retro-futurism (80s colors, geometric shapes)
-  - Organic (curves, nature colors, soft shadows)
-  - Luxury (serifs, heavy spacing, gold accents)
-  - Editorial (large typography, asymmetric)
-  - Art Deco (geometric, metallic, luxury feel)
+The randomizer creates variety on paper. This section makes sure it shows up on screen.
 
-- [ ] Distinctive font pairing (never use same combo twice):
-  - Display: Poppins, Clash Display, Satoshi, Playfair, Monument
-  - Body: Inter, DM Sans, Work Sans, Outfit
+**The "Screenshot Test" — Run After Building index.html**
 
-- [ ] Dominant color + strong accent (not evenly distributed):
-  - Primary: 60% (background/major sections)
-  - Secondary: 30% (supporting elements)
-  - Accent: 10% (CTAs, highlights)
+Before building any other page, audit `index.html` against these 7 kill signals. If ANY are true, delete and rebuild the homepage.
 
-- [ ] Asymmetric layout, overlapping elements, diagonal flow
-  - Images overlap text
-  - Text breaks grid
-  - Angled divider sections
-  - Unexpected whitespace
+```
+SLOP DETECTOR — run mentally after building index.html
+═══════════════════════════════════════════════════════
 
-- [ ] Grid-breaking elements:
-  - Large image that spans 2 columns
-  - Text rotated or at an angle
-  - Content that pops out of the box
+1. GRADIENT CHECK: Open styles.css. Find "linear-gradient".
+   → If gradient goes from [any color] to transparent as the MAIN
+     visual over a solid dark bg → that's the #1 AI-site tell.
+     Replace with texture, image, or solid color block.
 
-- [ ] Textured backgrounds (never flat solid):
-  - Gradient mesh (multi-point colors)
-  - Noise overlay (subtle grain at opacity 0.03)
-  - Geometric patterns (SVG shapes)
-  - Subtle animated background
+2. CARD SYMMETRY CHECK: Count columns in first section after hero.
+   → If it's exactly 3 equal-width cards with icons above text and
+     a "Learn More" link → STOP. That's the banned sequence in
+     disguise. Re-read Die 6 and rebuild.
 
-- [ ] Staggered reveal on page load:
-  - Logo appears first (0s)
-  - Headline fades in (0.3s)
-  - Subheadline slides up (0.6s)
-  - CTA button glows (0.9s)
-  - Creates anticipation
+3. FONT MONOTONY CHECK: How many font-family declarations in styles.css?
+   → If 1 → add a display font for headings.
+   → If body font is Inter, Roboto, or Arial → swap it.
+   → If both fonts are sans-serif → add serif display font
+     (Playfair Display, DM Serif, Fraunces, Lora).
 
-- [ ] Unexpected hover/scroll interactions:
-  - Button reveals hidden text on hover
-  - Images tilt slightly on mouse move
-  - Cursor changes context
-  - Text color shifts on section scroll
-  - Cards flip or slide on hover
+4. SPACING UNIFORMITY CHECK: Are all sections the same height/padding?
+   → Agency sites have RHYTHM. Vary section heights — tall hero,
+     tight stats bar, generous testimonials, dense service grid.
+     Not everything is padding: 80px 0.
 
-**Quality Checklist (Before Pitching):**
+5. ELEMENT OVERLAP CHECK: Does anything break the grid or overlap?
+   → If everything sits neatly inside containers with equal margins
+     → you have a template, not a design. Add at least ONE:
+     - Image that bleeds past its column
+     - Heading so large it wraps unexpectedly
+     - Decorative element crossing section boundaries
+     - Asymmetric layout where left ≠ right
 
-- [ ] Not using Inter/Roboto/Arial? ✓
-- [ ] No purple gradient? ✓
-- [ ] Border-radius varies by element? ✓
-- [ ] Has asymmetric/overlapping elements? ✓
-- [ ] Different fonts/colors from previous build? ✓
-- [ ] Would someone ask "did AI make this?" — answer is NO? ✓
-- [ ] Animations feel premium (60fps, easing is smooth)? ✓
-- [ ] Mobile looks great (test on actual phone)? ✓
-- [ ] Would you be proud to show this to a designer friend? ✓
+6. INTERACTION CHECK: Hover every card, button, link mentally.
+   → If answer is "color changes" for all → add richer interactions:
+     - Cards: translateY(-4px) + shadow + slight scale
+     - Buttons: background slide (left-to-right fill), not color swap
+     - Images: scale(1.03) with overflow:hidden on parent
+     - At least ONE element with a unique hover nothing else shares
+
+7. SCROLL LIFE CHECK: Scroll top to bottom mentally.
+   → If nothing moves/appears/changes → GSAP isn't working.
+   → MINIMUM: 3 scroll-triggered animations on homepage.
+     One in hero (load), one in middle (scroll), one near bottom.
+```
+
+**Niche-Specific Design Overrides — Apply AFTER dice roll, BEFORE building:**
+
+```
+AUTO REPAIR / TRADES:
+  → Fonts: Clash Display, Bebas Neue, or Oswald. NEVER cursive/script.
+  → Photos: Hands on tools, engine bays. NOT people smiling at cameras.
+  → Trust: ASE badge, years-in-business counter, "family-owned since [year]".
+  → Color: If Die 2 gives Deep Ocean or Monochrome+sage → swap accent to
+    red, yellow, or orange.
+
+RESTAURANTS / FOOD:
+  → Bad AI food photos kill restaurant sites. If Imagen looks synthetic,
+    fall back to restaurant's own scraped photos.
+  → Must include: menu link, hours in hero or immediately below,
+    reservation/order CTA.
+  → Fonts: Serif display works — Playfair, DM Serif, handwritten logo only.
+
+LAW / FINANCE / MEDICAL:
+  → BANNED motion regardless of dice: rolls 5 (scramble), 7 (venetian),
+    8 (3D cylinder), 10 (perimeter ticker), 15 (magnetic cursor).
+  → Must feature: credentials, licenses, bar numbers, certifications.
+  → Photos: Real headshots > AI faces. Use actual site photos if they exist.
+  → Fonts: Playfair Display, Cormorant Garamond, Source Serif Pro.
+
+SALONS / SPAS / BEAUTY:
+  → Warmer palettes: Terracotta, Slate & Copper, Night Forest all strong.
+    Chalk & Iron red accent can feel too aggressive.
+  → Photos: Texture shots (hair, skin, products) > people. AI beauty imagery
+    is uncanny valley — dangerous.
+  → Must include: booking CTA (not "contact us"), service menu w/ prices,
+    gallery/portfolio section.
+
+REAL ESTATE:
+  → Hero MUST feature property imagery, not abstract graphics.
+  → Include property showcase/gallery even if placeholder.
+  → Map integration on contact page is critical, not optional.
+  → Fonts: Outfit, Plus Jakarta Sans, Satoshi. Serif for luxury only.
+```
 
 ---
 
-## Step 6: SEO Implementation
+## SEO Implementation
 
-### LocalBusiness JSON-LD Schema
-
-Add this to `<head>` for local search optimization:
-
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "[BUSINESS_NAME]",
-  "description": "[BUSINESS_DESCRIPTION]",
-  "image": "https://example.com/logo.png",
-  "url": "https://example.com",
-  "telephone": "[PHONE_NUMBER]",
-  "email": "[EMAIL]",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "[STREET]",
-    "addressLocality": "[CITY]",
-    "addressRegion": "[STATE]",
-    "postalCode": "[ZIP]",
-    "addressCountry": "US"
-  },
-  "priceRange": "[PRICE_RANGE]",
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": "[LATITUDE]",
-    "longitude": "[LONGITUDE]"
-  },
-  "areaServed": "[SERVICE_AREA]",
-  "openingHoursSpecification": [
-    {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      "opens": "09:00",
-      "closes": "18:00"
-    }
-  ]
-}
-</script>
-```
-
-### Service Schema
-
-For service-based businesses (dentists, lawyers, salons):
-
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": "[SERVICE_NAME]",
-  "description": "[SERVICE_DESCRIPTION]",
-  "provider": {
-    "@type": "LocalBusiness",
-    "name": "[BUSINESS_NAME]",
-    "url": "https://example.com"
-  },
-  "areaServed": "[SERVICE_AREA]",
-  "availableLanguage": ["en"]
-}
-</script>
-```
-
-### Review/Rating Schema
-
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "AggregateRating",
-  "ratingValue": "4.8",
-  "bestRating": "5",
-  "worstRating": "1",
-  "ratingCount": "127"
-}
-</script>
-```
-
-### Meta Tags
+### Per-Page SEO (apply to every page)
 
 ```html
 <head>
-  <!-- Basic -->
-  <title>[BUSINESS_NAME] - [SERVICE]</title>
-  <meta name="description" content="[META_DESCRIPTION, 160 chars max]">
-  <meta name="keywords" content="[DENTIST, CHICAGO, etc]">
-  
-  <!-- OG (Open Graph) for social sharing -->
-  <meta property="og:title" content="[TITLE]">
-  <meta property="og:description" content="[DESCRIPTION]">
-  <meta property="og:image" content="https://example.com/og-image.jpg">
-  <meta property="og:url" content="https://example.com">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="[TITLE]">
-  <meta name="twitter:description" content="[DESCRIPTION]">
-  <meta name="twitter:image" content="https://example.com/og-image.jpg">
-  
-  <!-- Canonical -->
-  <link rel="canonical" href="https://example.com">
-  
-  <!-- Mobile -->
+  <title>[Keyword First] | [Business Name]</title>
+  <meta name="description" content="[Keyword + CTA, 150-160 chars]">
+  <meta property="og:title" content="[Title]">
+  <meta property="og:description" content="[Description]">
+  <meta property="og:image" content="[Image URL]">
+  <meta property="og:url" content="[Canonical URL]">
+  <link rel="canonical" href="[URL]">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2c3e50">
-  
-  <!-- Preload critical resources -->
-  <link rel="preload" as="font" href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 </head>
 ```
 
-### Core Web Vitals Optimization
+### JSON-LD Schemas
 
-**LCP (Largest Contentful Paint) < 2.5s:**
-- Optimize hero image (use WebP, max 100KB)
-- Lazy load images below fold
-- Preload critical fonts
-- Minify CSS
-
-**CLS (Cumulative Layout Shift) < 0.1:**
-- Set explicit width/height on images
-- Reserve space for ads/embeds
-- Avoid inserting DOM elements above fold
-- Use `contain: layout`
-
-**FID (First Input Delay) < 100ms:**
-- Minimize JavaScript execution
-- Use `requestAnimationFrame` for animations
-- Defer non-critical JS
-- Remove render-blocking resources
-
----
-
-## Step 7: Deployment to Netlify
-
-### GitHub Setup
-
-```bash
-# Create repo for this rebuild
-git init [business-name]-website
-cd [business-name]-website
-
-# Create files
-echo "index.html" > index.html  # Claude Code output
-echo "README.md" > README.md
-echo "node_modules/" > .gitignore
-echo "*.env" >> .gitignore
-echo "" >> .gitignore
-
-# Initial commit
-git add .
-git commit -m "feat: website rebuild for [business-name] - 4-iteration GSAP/scroll animation stack"
-
-# Push to GitHub
-gh repo create [business-name]-website --public --source . --remote origin --push
-```
-
-### Netlify Deployment
-
-**Option 1: Connect via UI**
-1. Go to https://netlify.com
-2. Click "Import Project"
-3. Paste GitHub repo URL
-4. Netlify auto-detects, no config needed
-5. Click "Deploy"
-6. Live URL: `https://[business-name]-website.netlify.app`
-
-**Option 2: CLI Deploy**
-
-```bash
-# Install Netlify CLI
-npm install -g netlify-cli
-
-# Deploy from repo
-netlify deploy --prod
-# Netlify auto-detects static HTML
-# Live URL: https://[business-name]-website.netlify.app
-```
-
-### Netlify Configuration (Optional)
-
-Create `netlify.toml` for advanced options:
-
+**LocalBusiness** (every page):
 ```json
 {
-  "buildCommand": "echo 'Static HTML - no build needed'",
-  "outputDirectory": ".",
-  "headers": [
-    {
-      "source": "/images/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
-    }
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "[BUSINESS]",
+  "telephone": "[PHONE]",
+  "address": {"@type": "PostalAddress", "streetAddress": "[STREET]", "addressLocality": "[CITY]", "addressRegion": "[STATE]"},
+  "url": "[URL]"
+}
+```
+
+**FAQPage** (faq.html):
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "[Q]", "acceptedAnswer": {"@type": "Answer", "text": "[A]"}}
   ]
 }
 ```
 
-### Live Demo URL
+**Service** (service pages):
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "[SERVICE]",
+  "provider": {"@type": "LocalBusiness", "name": "[BUSINESS]"},
+  "areaServed": "[CITY]"
+}
+```
 
-**Format:** `https://[business-name]-website.netlify.app`
+### GEO Optimization (AI Search Visibility)
 
-**Example:** `https://bright-smile-dental.netlify.app`
-
-**This is your hook** — send this link in cold emails with "See your new site here" CTA.
+- FAQ page with direct-answer format (answer in first sentence)
+- Specific statistics and data points throughout
+- Named entities with real credentials
+- One 1500-word authoritative guide page per niche
 
 ---
 
-## Step 8: Cold Outreach Strategy
+## Deployment to Netlify (Production Handoff Only)
 
-### Email A/B Testing
-
-Test these subject lines:
-
-**Set A (High curiosity):**
-- "I rebuilt your website — here's the link"
-- "Your website just got a $10K makeover"
-- "[Business Name] — Free website preview"
-
-**Set B (Urgency/FOMO):**
-- "Quick question: [3-second check]"
-- "The #1 thing killing your leads (and it's on your site)"
-- "Only 2 spots left this month"
-
-**Set C (Benefit-focused):**
-- "30-50% more bookings (see how)"
-- "Your competitors are stealing your clients"
-- "Mobile traffic you're losing right now"
-
-### Cold Email Template (Version 1: Direct)
-
-```
-Subject: I rebuilt your website — here's the link
-
-Hi [OWNER_NAME],
-
-I spent 2 hours rebuilding your website. Here's the live link:
-https://[business-name]-website.netlify.app
-
-What I changed:
-- Modern hero with video/3D animation
-- Smooth scroll effects on every section
-- Mobile-optimized (your current site breaks on mobile)
-- Testimonials carousel (auto-rotating)
-- Clear CTAs for bookings/calls
-- Optimized for Google search
-
-This isn't a mockup—it's fully functional, hosted, and ready to go live.
-
-If you like it, we can discuss pricing and handoff.
-
-Talk soon,
-[YOUR_NAME]
-[YOUR_PHONE]
-
-P.S. This usually takes 2-3 weeks at design agencies. I can rebuild yours in days.
-```
-
-### Cold Email Template (Version 2: Problem-Aware)
-
-```
-Subject: The #1 thing killing your leads (found it on your site)
-
-Hi [OWNER_NAME],
-
-I analyzed your website for [BUSINESS_TYPE] best practices, and found 3 major issues costing you bookings:
-
-1. Mobile is broken (60% of your traffic bounces immediately)
-2. No clear CTA above the fold (people don't know what to do)
-3. Zero animations (looks stuck in 2010, kills trust)
-
-Here's what a rebuild looks like:
-https://[business-name]-website.netlify.app
-
-I built this in a weekend. It has:
-- 60% faster load time
-- Mobile-perfect responsive design
-- Scroll animations that engage visitors
-- Clear booking CTAs
-- SEO optimized
-
-If you want to see the difference a real website makes, let's talk.
-
-[YOUR_NAME]
-[YOUR_PHONE]
-
-P.S. Your competitor [COMPETITOR_NAME] just rebuilt theirs last month. Worth thinking about.
-```
-
-### Cold Email Template (Version 3: Social Proof)
-
-```
-Subject: 3 [CITY] dentists just rebuilt their sites (+27% more bookings)
-
-Hi Dr. [OWNER_NAME],
-
-I've rebuilt websites for 3 dentists in the Chicago area this month. 
-Average result: 27% increase in booking inquiries within 60 days.
-
-Here's one example (real site, live):
-https://[business-name]-website.netlify.app
-
-What changed:
-- Modern design (no more 2010 vibes)
-- Mobile perfection (users can book from phone)
-- Smooth animations (visitors stay longer, convert more)
-- Google-friendly SEO
-- Hosting/maintenance included
-
-The cost is $5K-$10K depending on scope.
-
-Interested in seeing what your site could look like?
-
-[YOUR_NAME]
-[YOUR_PHONE]
-
-P.S. Most dentists see ROI in 3 months. Happy to share metrics from my other clients.
-```
-
-### AgentMail Integration
+**This section is for AFTER a client pays.** Demo sites go to GitHub Pages (Step 7). Netlify is for production handoff with a custom domain.
 
 ```bash
-# Set up AgentMail (requires API key in ~/.env)
-export AGENTMAIL_API_KEY="your_api_key_here"
+# Create repo and deploy to Netlify (post-payment only)
+cd /tmp/rebuild/[business-name]
+git init
+git add .
+git commit -m "feat: multi-page website rebuild for [business-name]"
+gh repo create [business-name]-website --public --source . --remote origin --push
 
-# Send email via AgentMail
-curl -X POST "https://api.agentmail.to/send" \
+# Deploy to Netlify
+netlify deploy --prod --dir .
+# Live URL: https://[business-name]-website.netlify.app
+# Then connect client's custom domain via Netlify dashboard
+```
+
+### netlify.toml (optional)
+```toml
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+```
+
+---
+
+## Cold Outreach Strategy
+
+### Cold Email — Humanization Rules
+
+The email determines whether a $7,500 deal happens. Treat it accordingly.
+
+- **Rule 1:** NEVER send the same email twice. The [PROBLEMS] must be specific to this business — scraped from their actual site.
+- **Rule 2:** Subject line names the business. Don't be clever. Be direct.
+- **Rule 3:** One CTA only — click the link. Nothing else.
+- **Rule 4:** Sender is always Alison from Teza. Display name: "Alison | Teza"
+
+**ONE TEMPLATE — use this every time, fill in the brackets:**
+
+```
+Subject: [BUSINESS_NAME] — we rebuilt your entire website
+
+Hi [FIRST_NAME or "there"],
+
+My name is Alison, from Teza. We help small businesses rebuild
+their digital footprint using AI — new websites, SEO, the works.
+
+We rebuilt your entire website because we noticed a few problems
+with your current one: [SPECIFIC_PROBLEMS — e.g. "it doesn't load
+properly on mobile, your phone number isn't visible above the fold,
+and you're not showing up when people search '[niche] in [city]'"].
+These kinds of issues are quietly costing you customers every week.
+
+Take a look at what we built:
+[DEMO_URL]
+
+Completely free to browse — no credit card, no catch.
+
+If you like it, we'd love to sell it to you. We can have the whole
+thing running on your own domain within 24 hours. If it's not for
+you, no pressure at all — just let us know.
+
+— Alison
+Teza
+```
+
+**Finding [SPECIFIC_PROBLEMS] — pull 2-3 real issues during NAP scrape:**
+
+**Finding [SPECIFIC OBSERVATION] — capture during NAP scrape:**
+```
+OBSERVATION CHECKLIST — find at least ONE:
+[ ] Free subdomain (wixsite.com, wordpress.com, etc.)
+[ ] No mobile responsiveness
+[ ] Hours not on homepage
+[ ] Phone buried (not in header/hero)
+[ ] No Google Maps on contact page
+[ ] >5 second load time
+[ ] No HTTPS (http:// only)
+[ ] Copyright year 2+ years old
+[ ] Competitor in same city has visibly better site
+```
+
+**Follow-up Sequence:**
+
+Day 3 — Short bump (under 30 words):
+```
+Subject: Re: [original subject]
+
+Hi [NAME], did the new site load OK? Here's the link again: [DEMO_URL]
+
+— Alex
+```
+
+Day 7 — Closing (under 40 words):
+```
+Subject: Re: [original subject]
+
+Hi [NAME], moving on to other projects this week. If you want
+the site, just reply and I'll send everything over. Otherwise
+no worries at all.
+
+— Alex
+```
+
+### AgentMail API
+
+```bash
+AGENTMAIL_API_KEY=$(cat ~/.openclaw/workspace/.secrets/agentmail-api-key.txt | tr -d '[:space:]')
+curl -s -X POST "https://api.agentmail.to/v0/inboxes/forgeaiseo@agentmail.to/messages/send" \
   -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "owner@brightsmile.com",
-    "subject": "I rebuilt your website — heres the link",
-    "body": "[EMAIL_BODY_HERE]",
-    "from": "you@yourname.com",
-    "track": true
+    "to": ["[EMAIL]"],
+    "subject": "[SUBJECT]",
+    "text": "[BODY]"
   }'
 ```
 
-### Follow-Up Sequence (7-Day)
-
-**Email 1 (Day 0): Initial Pitch**
-```
-Subject: I rebuilt your website — here's the link
-
-Hi [OWNER_NAME],
-
-[INITIAL_EMAIL_TEMPLATE]
-
-Talk soon,
-[YOUR_NAME]
-```
-
-**Email 2 (Day 3): Soft Follow-Up**
-```
-Subject: Re: I rebuilt your website — here's the link
-
-Hi [OWNER_NAME],
-
-Did you get a chance to see the new site?
-[LIVE_DEMO_URL]
-
-No pressure, but it's worth 90 seconds to check it out.
-
-Talk soon,
-[YOUR_NAME]
-```
-
-**Email 3 (Day 7): Final Push (Scarcity)**
-```
-Subject: Last chance to lock in early-bird pricing
-
-Hi [OWNER_NAME],
-
-I'm filling up my calendar for March. 
-
-Last spot available for your type of business:
-[LIVE_DEMO_URL]
-
-If you want to move forward, let me know ASAP.
-
-[YOUR_NAME]
-```
-
-### Tracking & Analytics
-
-AgentMail provides:
-- **Opens**: When email is opened (% open rate)
-- **Clicks**: Which links clicked (CTR)
-- **Time-to-open**: How long until first open
-- **Device**: Desktop vs mobile
-- **Location**: Geographic data
-
-Use this data to refine:
-- Subject lines (if < 20% open rate, rewrite)
-- Email copy (if < 30% click rate, simplify)
-- CTA placement (if clicks on wrong link, reposition)
-
 ---
 
-## Step 9: Closing & Objection Handling
+## Closing & Objection Handling
 
 ### Common Objections
 
-**Objection 1: "It's too expensive"**
+**"Too expensive"** → "Even 2-3 extra bookings = $5K-$10K in revenue. ROI in 1-2 months."
 
-Response:
-```
-I get it. But think about it this way:
-- How many leads do you lose each month to competitors with better websites?
-- Even 2-3 extra bookings = $5K-$10K in revenue (vs $5K cost)
-- ROI: 3-6 months, then pure profit
+**"Can I see examples?"** → Show 3 similar niche rebuilds with results.
 
-Plus: This is for a complete rebuild, not a cosmetic refresh. 
-You're getting animations, mobile optimization, SEO, hosted on fast servers.
+**"Happy with current site"** → "When was it built? How many mobile leads? Compare to your competitor's new site."
 
-What's your revenue per booking? That's the real number.
-```
+**"No time"** → "Total time from you: ~1 hour. I handle everything."
 
-**Objection 2: "Can I see more examples?"**
+**"I'll lose SEO"** → "New site has faster loads, mobile optimization, proper schema. SEO improves. We do 301 redirects."
 
-Response:
-```
-Absolutely. Here are 3 similar businesses I've rebuilt:
-1. [DENTIST_NAME] - [LIVE_URL] (27% more bookings)
-2. [LAWYER_NAME] - [LIVE_URL] (50% increase in leads)
-3. [SALON_NAME] - [LIVE_URL] (35% more inquiries)
+### Sales Call Structure (15 min)
 
-I'll show you these on our call. Plus analytics showing actual results.
-```
-
-**Objection 3: "I'm happy with my current site"**
-
-Response:
-```
-That's cool. But quick question: 
-- When was it built? [If 3+ years old, it's outdated by web standards]
-- How many of your leads come from mobile? [Usually 60%+, often broken]
-- Are you getting as many bookings as 2 years ago? [Probably not]
-
-Websites degrade over time. Technology changes, user expectations rise.
-
-Quick check: Compare yours to a competitor's (built recently). 
-I bet theirs converts better. That's what I fix.
-
-No pressure either way.
-```
-
-**Objection 4: "I don't have time for this"**
-
-Response:
-```
-Good news: You don't have to do anything. 
-
-Here's the process:
-1. I build the site (you give me 30 min to gather info)
-2. You review it (takes 15 min)
-3. I deploy it (you just approve)
-4. Done. I handle everything.
-
-Total time commitment: ~1 hour. 
-Total timeline: 1-2 weeks.
-
-That's it.
-```
-
-**Objection 5: "I'll lose my email list / SEO / etc"**
-
-Response:
-```
-Great question. Here's how I handle it:
-
-1. **Email list**: Stays exactly the same. We preserve all your forms, integrations, email capture.
-
-2. **SEO**: Actually improves. New site has:
-   - Faster load times (huge for rankings)
-   - Mobile optimization (Google priority)
-   - Proper schema markup
-   - Clean URL structure
-   - Better internal linking
-   - We do 301 redirects from old pages to new
-
-3. **Forms/integrations**: Everything transfers over. Contact forms, appointment schedulers, email integrations.
-
-You keep everything. You just get a better-looking, faster, converting site.
-```
-
-### Sales Call Structure (15 minutes)
-
-**1. Build rapport (2 min)**
-```
-"Thanks for hopping on. Quick background—I've been rebuilding websites 
-for [NICHE] for [TIME_PERIOD]. Usually see 20-50% increase in 
-booking inquiries. I think I can do the same for you."
-```
-
-**2. Show the mock (3 min)**
-```
-"Here's what your site would look like:
-[SHARE LIVE_URL]
-
-Walk them through:
-- Hero animation
-- Scroll effects
-- Testimonials carousel
-- Mobile version
-- Loading speed
-- CTAs
-"
-```
-
-**3. Acknowledge their situation (2 min)**
-```
-"Your current site is [HONEST ASSESSMENT].
-The main issues are:
-1. [MOBILE/SPEED/DESIGN]
-2. [DESIGN/CTA/TRUST_SIGNALS]
-3. [CONVERSION/CLARITY/ANIMATION]
-
-Here's how this fixes each..."
-```
-
-**4. Explain the value (3 min)**
-```
-"When we rebuild, here's what happens:
-- 60% faster load time (fewer bounces)
-- Mobile works perfectly (captures leads from phones)
-- Animations build trust (looks premium, not DIY)
-- Clear CTAs (easier bookings)
-
-Result: typically 20-50% more inquiries in first 60 days.
-
-Your current inquiry rate is [X]/month. 
-Even 10% improvement = [Y] more bookings × $[PRICE] = $[VALUE] 
-
-The rebuild pays for itself in 1-2 months."
-```
-
-**5. Get to price (3 min)**
-```
-"For [BUSINESS_NAME], I'd recommend the Pro package: $5K.
-
-That includes:
-- Full rebuild (4 iterations, approved at each stage)
-- Hosting on Netlify (fast, reliable)
-- SEO optimization (local business schema)
-- Ongoing support (3 months free tweaks)
-
-Or if you want the premium package with 3D animations: $10K.
-
-Questions?"
-```
-
-**6. Close (2 min)**
-```
-"What does your gut say?"
-
-[If interested] "Perfect. Here's next steps:
-1. 50% deposit ($2.5K or $5K) to get started
-2. You gather info (business copy, testimonials, photos)
-3. I build Iteration 1 (you review, approve)
-4. Iterate to perfection
-5. Deploy and go live
-
-Timeline: 1-2 weeks. Any concerns?"
-
-[If not interested] "No worries. At least you know what's possible. 
-My offer stands if you change your mind. 
-Good luck with the current site."
-```
-
-### Closing Tactics
-
-**Scarcity play:**
-```
-"I have 2 spots left in March. 
-Want to secure one before they fill up?"
-```
-
-**Social proof play:**
-```
-"[COMPETITOR_NAME] just went live last month. 
-Seeing 40% more inquiries already. Worth thinking about."
-```
-
-**Urgency play:**
-```
-"Every month you wait, you're losing ~$2K in leads to competitors 
-with better websites. I can fix this in 2 weeks."
-```
-
-**Money-back guarantee (optional):**
-```
-"If you're not happy with the rebuild, I'll give you 50% back. 
-That's how confident I am."
-```
+1. Build rapport (2 min) — background, similar niche results
+2. Show the demo (3 min) — walk through hero, scroll effects, mobile, speed
+3. Acknowledge their situation (2 min) — honest assessment of current site
+4. Explain value (3 min) — mobile leads, speed, bookings increase
+5. Price (3 min) — Pro $5K or Premium $10K
+6. Close (2 min) — 50% deposit, 1-2 week timeline
 
 ---
 
-## Step 10: API Keys & Setup
+## Nick Saraev Flow — AI Video Scroll Sequences
 
-### Required Environment Variables
+### The 3-Step Method
 
-Create `.env` file in your project root:
+**Step 1:** Use Leon's Taste Skill (embedded below) with Claude Code to oneshot the site structure.
 
-```bash
-# Firecrawl (site scraping & analysis)
-FIRECRAWL_API_KEY=your_firecrawl_api_key
+**Step 2:** Generate image with Nano Banana (Imagen 4) → animate with Veo 2/3 → extract frames with ffmpeg.
 
-# Netlify (deployment)
-NETLIFY_TOKEN=your_netlify_token
+**Step 3:** Claude Code integrates video as hero background or scroll-scrubbed frame sequence.
 
-# Gemini (image generation for hero visuals)
-GEMINI_API_KEY=your_gemini_api_key
+### Leon's Taste Skill (High-Agency Frontend)
 
-# AgentMail (cold email sending)
-AGENTMAIL_API_KEY=your_agentmail_api_key
+Use for all new builds. Key rules:
 
-# Optional: GitHub (for repo creation)
-GITHUB_TOKEN=your_github_token
-```
+- **DESIGN_VARIANCE: 8** | **MOTION_INTENSITY: 6** | **VISUAL_DENSITY: 4**
+- Framework: React or vanilla HTML. Styling: Tailwind CSS.
+- BANNED: Inter font, purple gradients, centered hero (when variance > 4), 3-column equal card grids, h-screen (use min-h-[100dvh])
+- Typography: text-4xl md:text-6xl tracking-tighter. Use Geist, Outfit, Cabinet Grotesk, Satoshi.
+- Motion: Spring physics on all interactive elements. Staggered orchestration on mount. Animate only transform + opacity.
+- Liquid Glass: backdrop-blur + 1px inner border + inner shadow.
 
-### API Setup Instructions
+### Leon's Soft Skill (Luxury/Agency — $150k look)
 
-#### **Firecrawl API Key**
+Use when client wants premium agency feel:
 
-1. Go to https://firecrawl.dev/
-2. Sign up (free tier: 10K credits/month)
-3. Copy API key from dashboard
-4. Install CLI:
-   ```bash
-   npm install -g firecrawl-cli
-   firecrawl login --api-key YOUR_KEY
-   ```
-5. Test:
-   ```bash
-   firecrawl scrape "https://example.com" --format markdown
-   ```
+- Vibe options: Ethereal Glass (OLED black, mesh gradients), Editorial Luxury (warm creams, serif), Soft Structuralism (silver-grey, bold Grotesk)
+- Layout options: Asymmetrical Bento (masonry grid), Z-Axis Cascade (stacked cards), Editorial Split
+- Double-Bezel card pattern: outer shell (bg-black/5, ring-1, p-1.5) + inner core (inset shadow)
+- Button-in-Button: rounded-full with nested arrow icon circle
+- All transitions: custom cubic-bezier — NEVER linear or ease-in-out
 
-#### **Netlify Token**
+### Cost Per Site
 
-1. Go to https://netlify.com/account/tokens
-2. Click "Create Token"
-3. Copy token (never commit to git)
-4. Add to `.env`:
-   ```bash
-   NETLIFY_TOKEN=your_token_here
-   ```
-5. Test:
-   ```bash
-   netlify deploy --prod
-   ```
-
-#### **Gemini API Key**
-
-1. Go to https://ai.google.dev
-2. Click "Get API Key"
-3. Create new project if needed
-4. Copy API key
-5. Test:
-   ```bash
-   curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent" \
-     -H "Content-Type: application/json" \
-     -d '{"contents": [{"parts": [{"text": "Say hello"}]}]}' \
-     -H "x-goog-api-key: YOUR_KEY"
-   ```
-
-#### **AgentMail API Key**
-
-1. Go to https://agentmail.to
-2. Create account or login
-3. Go to Settings → API Keys
-4. Generate new key
-5. Add to `.env`:
-   ```bash
-   AGENTMAIL_API_KEY=your_key_here
-   ```
-6. Test:
-   ```bash
-   curl -X POST "https://api.agentmail.to/send" \
-     -H "Authorization: Bearer YOUR_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{"to": "test@example.com", "subject": "Test", "body": "Hello"}'
-   ```
-
-#### **GitHub Token**
-
-1. Go to https://github.com/settings/tokens
-2. Click "Generate new token" → "Generate new token (classic)"
-3. Scopes: `repo`, `workflow`, `gist`
-4. Copy token
-5. Add to `.env`:
-   ```bash
-   GITHUB_TOKEN=your_token_here
-   ```
+| Item | Cost |
+|------|------|
+| Claude Code tokens | ~$1 |
+| Veo video generation | ~$1-2 |
+| Imagen 4 images | ~$0.10 |
+| Netlify hosting | Free |
+| **Total** | **~$3-5** |
 
 ---
 
-## Step 11: Fast Build Path (AntiGravity + Stitch)
+## Interactive Features — High-Value Upsells
 
-**When to use:** Speed matters over control, or you're cloning a niche (same business type, different city/brand).
-**When NOT to use:** Client needs custom backend, complex logic, or absolute design control → use Step 3 (Claude Code) instead.
+### Order/Appointment Tracker (Pizza Hut Pattern)
 
-> Full background on Jack Roberts' method, frameworks, and anti-slop rules: `references/jack-roberts-method.md`
+For businesses that take orders or appointments. Replace generic contact forms:
 
----
+**State 1: Wizard** — Product/service selector → Customize → Date/Details → Review & Confirm
+**State 2: Confirmation** — Animated checkmark, order number, ETA
+**State 3: Tracker** — `[●]———[○]———[○]———[○]` progress bar with pulsing active step
+**State 4: History** — localStorage order list with status badges
 
-### Tool Setup
-
-| Tool | Purpose | URL |
-|------|---------|-----|
-| AntiGravity | Visual website builder (Google) | antigravity.dev |
-| Stitch | Design agent for brand variations | stitch.withgoogle.com |
-| Gemini 3 | AI engine for copy, design systems, validation | gemini.google.com |
-| Spline | 3D animation, no-code, embeds in AntiGravity | spline.design |
+Uses GSAP state transitions: `gsap.to(current, {opacity:0, x:-50})` then `gsap.from(next, {opacity:0, x:50})`
 
 ---
 
-### Workflow: First Client in a Niche (2–3 days)
+## Autonomous Cron Setup
 
-**Phase 1: Brand Brief (30 min)**
-```
-Inputs needed:
-- Business name + industry
-- Primary color (from scrape-site.sh output)
-- Logo URL or file
-- 3 key services
-- Target customer (age, location, problem)
-- Desired tone: professional / friendly / luxury / urgent
-
-Prompt for Gemini 3:
-"I'm rebuilding a [industry] website for [business name] in [city].
-Brand colors: [hex]. Tone: [tone]. Target customer: [customer].
-Generate: (1) complete design system (colors, fonts, spacing), (2) hero headline + subheadline,
-(3) 3 benefit bullets, (4) CTA text, (5) FAQ (5 questions), (6) social proof angle."
-```
-
-**Phase 2: Build in AntiGravity (4–8 hours)**
-
-1. Open AntiGravity → New Project → Blank or pick a base template
-2. Load Gemini's design system: paste colors/fonts into AntiGravity theme settings
-3. Build these sections in order:
-   - **Hero**: Full-screen, headline from Gemini, CTA button, background (video or Spline 3D)
-   - **Social proof bar**: logos or "trusted by X businesses"
-   - **Services**: 3-column card grid, icons, animate on scroll
-   - **Testimonials**: carousel with star ratings (extract from Google with scrape-site.sh)
-   - **CTA section**: Book/call/contact, prominent button
-   - **Footer**: address, phone, hours, links
-4. Apply GSAP scroll animations to cards and section reveals (AntiGravity has built-in GSAP support)
-5. Add Spline 3D to hero if Tier 2+:
-   - Open spline.design → create or pick a 3D scene → Export → "Embed on web"
-   - Copy embed code → paste into AntiGravity hero section HTML embed block
-
-**Phase 3: Mobile Pass (1 hour)**
-- Switch to mobile view in AntiGravity
-- Stack columns to single-column
-- Increase tap target sizes to ≥44px
-- Test hero headline font size (min 32px on mobile)
-- Check video/Spline loads without lag (fallback to static image if needed)
-
-**Phase 4: Deploy (15 min)**
-```bash
-# In AntiGravity: Publish → Connect GitHub → auto-push to repo
-# Then:
-netlify login
-netlify init   # link to repo
-netlify deploy --prod
-# Live URL → send in cold email
-```
-
----
-
-### Workflow: Cloning for Same-Niche Repeat (4–6 hours per client)
-
-Once you have one excellent template in a niche (e.g., dentist in Chicago):
-
-```
-In AntiGravity:
-1. Duplicate master project → rename to new client
-2. Open Stitch → "Generate variation" → upload new brand brief:
-   - New business name, logo, colors, city, testimonials
-3. Stitch regenerates: typography, palette, hero copy, service names, CTA text
-4. Review + approve each section (spot-check layout, fix anything off)
-5. Deploy to Netlify → new subdomain per client
-```
-
-**What changes automatically:** logo, colors, fonts, copy, testimonials, service names
-**What you fix manually:** any layout breaks, custom photos, contact info in footer
-
----
-
-### Gemini 3 Prompts (Copy-Paste Ready)
-
-**Design system generation:**
-```
-Business: [name], Industry: [industry], City: [city]
-Primary color: [hex from scrape], Tone: [professional/warm/luxury]
-Generate a complete design system:
-- Primary + secondary + accent hex colors (60/30/10 rule)
-- Display font + body font (NOT Inter, Roboto, or Arial)
-- Base font size + heading scale
-- Border radius (pick one: sharp 0px / soft 8px / round 16px)
-- Button style (filled / outlined / ghost)
-```
-
-**Hero copy:**
-```
-Business: [name] — [one-line description]
-Target customer: [customer type] with problem: [problem]
-Write: (1) H1 headline (max 8 words, outcome-focused), (2) subheadline (max 20 words),
-(3) primary CTA button text (2-4 words), (4) secondary CTA (optional)
-Tone: [tone]. No generic phrases like "Welcome to" or "We are".
-```
-
-**Cold email with live link:**
-```
-Write a cold email for a [industry] owner.
-My rebuilt version of their site is live at: [URL]
-Key improvements made: [list 3 specific improvements from scrape output]
-Keep it under 150 words. No fluff. Lead with the link.
-Subject line + email body. Use [SENDER_NAME] as signature.
-```
-
----
-
-### Decision Matrix: AntiGravity vs Claude Code
-
-| Situation | Use AntiGravity + Stitch | Use Claude Code |
-|-----------|--------------------------|-----------------|
-| First build in a niche | ✅ Build the master template | — |
-| 2nd–10th client in same niche | ✅ Clone via Stitch | — |
-| Custom animations (GSAP complex) | — | ✅ |
-| Backend / API integration | — | ✅ |
-| Client needs source code | — | ✅ |
-| Speed is the priority | ✅ | — |
-| Absolute design control | — | ✅ |
-
-
-## Step 12: Autonomous Cron Setup
-
-Automate the entire pipeline to run daily without human intervention. Uses `openclaw cron add` to schedule an isolated agent session that finds targets, builds sites, sends outreach emails, and posts results to Discord.
-
-### Scripts Overview
-
-Two new scripts power the automated pipeline:
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/build-site.sh` | Takes scraped site content → builds with Claude Code → deploys to Netlify → returns live URL |
-| `scripts/run-pipeline.sh` | Master orchestrator: find-targets → scrape → build → email → summary |
-
-### Manual Run
-
-```bash
-# Run the full pipeline manually
-bash scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name "Alex"
-
-# Or build a single site
-bash scripts/build-site.sh \
-  --domain "brightsmile.com" \
-  --scrape-dir "/tmp/website-remake-targets/brightsmile_com" \
-  --niche "dentist" \
-  --city "chicago"
-```
-
-### Cron Schedule (Weekdays 9 AM Chicago Time)
-
-Add this cron job to run the pipeline every weekday at 9 AM Central:
+### Cron Configuration
 
 ```json
 {
@@ -1798,70 +1350,7 @@ Add this cron job to run the pipeline every weekday at 9 AM Central:
   "payload": {
     "kind": "agentTurn",
     "model": "haiku",
-    "message": "Run the website-remake pipeline. Execute: bash /Users/andreofastora/.openclaw/workspace/skills/website-remake-skill/scripts/run-pipeline.sh --niche dentist --city chicago --limit 3 --sender-name Alex. Log output and post a summary of results (sites built, emails sent, failures) to #website-rebuilder tagging <@1468821540861902973>."
-  },
-  "sessionTarget": "isolated",
-  "delivery": {
-    "mode": "announce",
-    "channel": "discord",
-    "to": "#website-rebuilder"
-  },
-  "enabled": false
-}
-```
-
-> **Note:** `enabled: false` by default — flip to `true` only after testing manually with `run-pipeline.sh` and confirming all API keys are present.
-
-### What the Cron Does Each Day
-
-| Time | Action | Output |
-|------|--------|--------|
-| 9:00 AM CT | Agent wakes up in isolated session | — |
-| 9:01 AM | Runs `find-targets.sh` → searches Brave for outdated sites | Markdown table of targets |
-| 9:02 AM | Runs `scrape-site.sh` on top 3 targets | `/tmp/website-remake-targets/*/content.md` |
-| 9:05 AM | Runs `build-site.sh` for each target → Claude Code builds site | Full website in `/tmp/website-rebuilds/` |
-| 9:15 AM | Deploys each build to Netlify | Live `.netlify.app` URLs |
-| 9:16 AM | Extracts business emails from scraped content | — |
-| 9:17 AM | Sends cold outreach via `send-email.sh` (AgentMail) | Email delivery confirmation |
-| 9:18 AM | Posts summary to `#website-rebuilder` Discord channel | "3 built, 2 emails sent, 0 failed" |
-
-### Enable / Disable
-
-Manage via OpenClaw's `cron` tool (or ask Andre directly):
-
-```
-# List all crons (including disabled)
-→ cron action:list includeDisabled:true
-
-# Enable the daily run
-→ cron action:update jobId:<id> patch:{"enabled": true}
-
-# Disable (pause without deleting)
-→ cron action:update jobId:<id> patch:{"enabled": false}
-
-# Delete entirely
-→ cron action:remove jobId:<id>
-
-# Trigger a manual run immediately
-→ cron action:run jobId:<id>
-```
-
-### Customizing the Niche & City
-
-Edit the cron payload message to target different markets:
-
-```json
-{
-  "name": "website-remake-lawyers-miami",
-  "schedule": {
-    "kind": "cron",
-    "expr": "0 10 * * 1-5",
-    "tz": "America/Chicago"
-  },
-  "payload": {
-    "kind": "agentTurn",
-    "model": "haiku",
-    "message": "Run the website-remake pipeline. Execute: bash /Users/andreofastora/.openclaw/workspace/skills/website-remake-skill/scripts/run-pipeline.sh --niche lawyer --city miami --limit 3 --sender-name Alex. Post summary to #website-rebuilder."
+    "message": "Read the website-remake skill at ~/.openclaw/workspace/skills/website-remake/SKILL.md. Execute the PIPELINE EXECUTION CHECKLIST top to bottom for niche=dentist, city=chicago, limit=1. Find one target, scrape NAP, generate hero video + images, build ALL pages (index + services + about + contact + faq), run COMPLETION GATE, deploy to Netlify, log to Notion, send cold email via AgentMail (sender: forgeaiseo@agentmail.to). Post summary to #website-rebuilder."
   },
   "sessionTarget": "isolated",
   "delivery": {
@@ -1875,307 +1364,366 @@ Edit the cron payload message to target different markets:
 
 ### Required Secrets
 
-All secrets must be present in `$HOME/.openclaw/workspace/.secrets/` before the cron fires:
+All must be in `~/.openclaw/workspace/.secrets/`:
 
 | File | Used By |
 |------|---------|
-| `brave-search-api-key.txt` | `find-targets.sh` — Brave Search API |
-| `firecrawl-api-key.txt` | `scrape-site.sh` — Firecrawl site analysis |
-| `netlify-token.txt` | `build-site.sh` — Netlify deployment |
-| `agentmail-api-key.txt` | `send-email.sh` — cold outreach emails |
+| `gemini-api-key.txt` | Imagen 4 + Veo video generation |
+| `firecrawl-api-key.txt` | Site scraping |
+| `netlify-token.txt` | Deployment |
+| `agentmail-api-key.txt` | Cold email sending |
+| `notion.env` | Pipeline logging |
 
+---
 
-## SEO & GEO Optimization Step
+## API Keys & Setup Reference
 
-This step runs AFTER the site is built and deployed. Every website remake must include this — it's what makes the $5K site worth $10K.
+### Firecrawl
+- URL: https://firecrawl.dev/
+- Free tier: 10K credits/month
 
-### Why Multi-Page Architecture Wins
+### Netlify
+- Token: https://netlify.com/account/tokens
 
-**The #1 SEO mistake on rebuilt sites: keeping everything on one page.**
+### Gemini (Imagen 4 + Veo)
+- URL: https://ai.google.dev
+- Models: `imagen-4.0-generate-001` (images), `veo-2.0-generate-001` (video)
 
-Single-page sites have one URL to rank. Multi-page sites have dozens. Every service page, every location page, every FAQ entry is a separate opportunity to rank for a different keyword. For a dentist in Chicago:
+### AgentMail
+- URL: https://agentmail.to
+- Inbox: `forgeaiseo@agentmail.to`
+- Endpoint: `POST /v0/inboxes/{inbox}/messages/send`
 
-- `/services/teeth-whitening` → ranks for "teeth whitening chicago"
-- `/services/dental-implants` → ranks for "dental implants chicago cost"
-- `/services/invisalign` → ranks for "invisalign chicago near me"
-- `/about` → ranks for branded searches + E-E-A-T signals
-- `/faq` → ranks for question-based searches ("how long do dental implants last")
-- `/blog/` → long-tail content traffic
+---
 
-One page = 1 ranking opportunity. Ten pages = 10+ ranking opportunities. This is not optional — build multi-page for every client.
+## Mobile-First CSS Template
 
-**Minimum page structure for every remake:**
-```
-/                     → Homepage (primary keyword: "[service] [city]")
-/services/            → Services overview
-/services/[service-1] → Individual service pages (1 per service)
-/services/[service-2]
-/about                → About + team (E-E-A-T)
-/contact              → Contact + location (Local SEO)
-/faq                  → FAQ schema markup
-/blog/                → Blog index (optional but high value)
-```
+Every build must include these breakpoints at the bottom of `styles.css`:
 
-### SEO Implementation (On-Page)
+```css
+/* Base styles are mobile (375px+) */
 
-Run this for every page after the build:
+@media (min-width: 768px) {
+  /* Tablet: multi-column grids, larger padding, side-by-side layouts */
+}
 
-**1. Title tags** — primary keyword first, brand second, 50-60 chars
-```html
-<title>Teeth Whitening Chicago | Bright Smile Dental</title>
-```
+@media (min-width: 1024px) {
+  /* Desktop: full grid, larger typography, hover effects */
+}
 
-**2. Meta descriptions** — include keyword + CTA, 150-160 chars
-```html
-<meta name="description" content="Professional teeth whitening in Chicago. Same-day appointments. Get a brighter smile in 1 hour. Call or book online at Bright Smile Dental.">
-```
-
-**3. H1 → H2 → H3 hierarchy** — one H1 per page, keyword in H1
-```html
-<h1>Teeth Whitening in Chicago</h1>
-<h2>How Our Whitening Process Works</h2>
-<h2>Why Choose Bright Smile Dental</h2>
-```
-
-**4. JSON-LD structured data** — mandatory on every page
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": "Bright Smile Dental",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "123 Main St",
-    "addressLocality": "Chicago",
-    "addressRegion": "IL"
-  },
-  "telephone": "+1-312-555-0100",
-  "openingHours": "Mo-Fr 09:00-18:00",
-  "priceRange": "$$",
-  "image": "https://brightsmile.com/og-image.jpg",
-  "url": "https://brightsmile.com"
+@media (max-width: 480px) {
+  /* Extra small: font floors, minimal padding, stacked everything */
 }
 ```
 
-**5. Open Graph tags** — for social sharing
-```html
-<meta property="og:title" content="Teeth Whitening Chicago | Bright Smile Dental">
-<meta property="og:description" content="Professional teeth whitening. Same-day appointments.">
-<meta property="og:image" content="https://brightsmile.com/og-image.jpg">
-<meta property="og:url" content="https://brightsmile.com/services/teeth-whitening">
+**Mandatory rules:**
+- No fixed pixel widths on containers
+- Touch targets ≥ 44px
+- `font-size: clamp(1.8rem, 6vw, 4rem)` for headlines
+- Body text minimum 1rem (16px)
+- Section padding: 80px desktop → 48px mobile
+- All grids → single column at 768px
+- Hamburger nav for 3+ links
+- `max-width: 100%` on all images
+
+---
+
+## REFERENCE BUILD — What Success Looks Like
+
+**Takase Auto Repair — Chicago, IL | March 19, 2026**
+Live demo: https://takase-auto-rebuild.netlify.app
+Approved by Hari as the gold standard for this skill.
+
+### Target profile
+- Wix free subdomain (takaseauto.wixsite.com) — no custom domain, zero Google presence
+- 7 Facebook likes — invisible online
+- Strong real-world reputation (ASE certified, good Yelp reviews)
+- Phone, email, address all publicly available
+- Niche: Auto repair, Chicago South Side
+
+### Design roll
+```
+Die 1 Nav:      5 — Sticky headline bar (massive on load, shrinks on scroll)
+Die 2 Colors:   7 — Monochrome +1 (black #111111, white text, marigold #F2C94C accent)
+Die 3 Hero:     1 — Full-bleed Veo video, dark gradient overlay
+Die 4 Layout:   6 — Classic 12-column grid, micro-details, sophisticated typography
+Die 5 Motion:   3 — Horizontal marquee (infinite scroll for trust signals/stats)
+Die 6 Sections: 1 — Manifesto First: brand statement → gallery → testimonial wall → services accordion → sticky CTA bar
 ```
 
-**6. Canonical tags** — prevent duplicate content
-```html
-<link rel="canonical" href="https://brightsmile.com/services/teeth-whitening">
+### What made this a clean run
+- Die 6 produced a genuinely different section sequence — NOT hero→grid→band→contact
+- Manifesto First led with a bold brand POV before any services — felt like a real agency site
+- Marigold accent on black = high contrast, distinctive, not AI-slop purple
+- Marquee trust bar replaced the boring 3x3 stat grid
+- Accordion for services instead of cards — Die 6 forced this
+
+### Pages built (all 10 — Completion Gate passed)
+```
+index.html
+about.html
+contact.html
+faq.html
+services/index.html
+services/brakes.html
+services/oil-change.html
+services/alignments.html
+sitemap.xml
+robots.txt
 ```
 
-**7. Internal linking** — every service page links to at least 3 other pages. Homepage links to all service pages. Blog posts link to relevant service pages.
+### Pipeline steps completed
+1. Target found via Brave Search — Wix site, no custom domain, verified contact info
+2. NAP scraped from search results (phone, email, address, hours, services)
+3. Veo 2 hero video generated via Gemini API (veo-2.0-generate-001)
+4. 2x images generated via Gemini Imagen 4 (imagen-4.0-generate-001)
+5. All 10 required files built by Sonnet subagent
+6. Completion Gate ran — all files verified present
+7. Deployed to GitHub Pages (oh-ashen-one.github.io/takase-auto-rebuild) — free
+8. Logged to Notion DB (status: Built)
+9. Cold email sent via forgeaiseo@agentmail.to to takaseautorepair@gmail.com
 
-**8. Image alt text** — every image has descriptive alt text with keyword where natural
-```html
-<img src="whitening-before-after.jpg" alt="Before and after teeth whitening Chicago patient results">
+### Time & cost
+- Total wall time: ~25 minutes (Veo video gen + Sonnet subagent build + manual finish)
+- Sonnet subagent: timed out at 10min with 7/9 pages done — Andre finished remaining 3 files directly
+- Tokens: ~47.7k (Sonnet subagent) + orchestration overhead
+- Estimated cost: ~$0.60–0.80 for this build
+
+### Lesson: subagent timeout handling
+Sonnet timed out at 10min mid-build. The fix: check `/tmp/[site]/site/` for partial work, write missing files directly, run the Completion Gate, then deploy. Don't respawn — finish it yourself. Saves time and tokens.
+
+---
+
+## GSAP Validation — Mandatory Before Completion Gate
+
+GSAP is the #1 source of broken builds. Animations look coded but fail silently.
+
+### The 6 GSAP Killers
+
+```
+KILLER 1: MISSING PLUGIN REGISTRATION
+  First line of main.js (after imports) MUST be:
+    gsap.registerPlugin(ScrollTrigger);
+  Missing this = every ScrollTrigger animation silently fails.
+
+KILLER 2: CDN LOAD ORDER
+  Every HTML file must load scripts in this EXACT order:
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="js/main.js"></script>
+  main.js before gsap = everything breaks.
+
+KILLER 3: SELECTOR MISMATCH
+  For every gsap.to()/gsap.from() call, verify the CSS selector
+  actually exists in HTML, spelled exactly the same (case-sensitive).
+  Common fail: main.js uses ".service-card", HTML uses class="serviceCard".
+
+KILLER 4: INITIAL STATE MISSING
+  If animating FROM opacity:0 and y:60, elements must START there in CSS.
+  Add to styles.css: .gsap-hidden { opacity: 0; transform: translateY(60px); }
+  Add class="gsap-hidden" to every animated element in HTML.
+
+KILLER 5: SCROLLTRIGGER START VALUE
+  start: "top 80%" = correct for most reveals.
+  NEVER use start: "top bottom" — fires before element visible.
+
+KILLER 6: MULTIPLE PAGES, ONE main.js
+  Wrap page-specific animations in existence checks:
+    const hero = document.querySelector('.hero-video');
+    if (hero) { gsap.from(hero, { ... }); }
+  Do this for EVERY selector that only exists on one page.
 ```
 
-### Core Web Vitals (Required)
+### Minimum Animation Inventory Per Page
 
-Every rebuilt site must pass Core Web Vitals — Google uses these as ranking signals:
+```
+index.html    Hero entrance (load), first section (scroll), stats/counter (scroll), 1+ more, nav transition
+about.html    Stats counter, 1+ scroll reveal
+contact.html  Form/content reveal on scroll
+services/     Card/content stagger on scroll
+ALL PAGES     scroll-behavior: smooth, hover states on all interactive elements
+```
 
+### GSAP Boilerplate — Starting Point for main.js
+
+```javascript
+// === GSAP SETUP — DO NOT MODIFY THIS BLOCK ===
+gsap.registerPlugin(ScrollTrigger);
+
+function animateIfExists(selector, animProps, triggerOpts = {}) {
+  const elements = document.querySelectorAll(selector);
+  if (!elements.length) return;
+  elements.forEach((el, i) => {
+    gsap.from(el, {
+      ...animProps,
+      delay: (animProps.stagger || 0) * i,
+      scrollTrigger: {
+        trigger: el.closest('section') || el,
+        start: 'top 80%',
+        once: true,
+        ...triggerOpts
+      }
+    });
+  });
+}
+
+// Fade-up reveals (add class="reveal" to any element)
+animateIfExists('.reveal', {
+  opacity: 0, y: 40, duration: 0.8, stagger: 0.15, ease: 'power3.out'
+});
+
+// Counter animations (add data-count="150" to any element)
+document.querySelectorAll('[data-count]').forEach(el => {
+  const target = parseInt(el.dataset.count);
+  gsap.from(el, {
+    textContent: 0, duration: 2, ease: 'power3.out',
+    snap: { textContent: 1 },
+    scrollTrigger: { trigger: el, start: 'top 85%' }
+  });
+});
+
+// === PAGE-SPECIFIC ANIMATIONS BELOW ===
+// Always wrap in: if (document.querySelector('.selector')) { ... }
+```
+
+---
+
+## Media Generation — Fallback Chain
+
+Media generation has a 3-tier fallback. Try each in order. NEVER halt the pipeline.
+
+```
+TIER 1: Veo 2 Video (preferred)
+  → If API errors OR video file <50KB → log error, go to TIER 2
+
+TIER 2: Imagen 4 Static Image (good)
+  → If API errors OR image file <10KB → log error, go to TIER 3
+
+TIER 3: CSS Gradient Mesh (zero-cost — still looks good)
+  → Force Die 3 = 7 (Animated gradient mesh)
+  → Log: "Using CSS gradient hero — no external media."
+  → Note in HTML comment: "Die 3: 7 — Animated gradient mesh (FALLBACK)"
+```
+
+**Imagen 4 prompt formula that works:**
+`[Photography style] [shot type] of [SPECIFIC subject], [lighting], [camera/lens], [publication-quality reference]`
+
+Good: `"Editorial photograph of a modern auto repair shop interior, warm tungsten lighting, shallow depth of field, Canon EOS R5, 35mm lens, professional photography"`
+
+Bad: `"A beautiful website hero image for a dentist"` ← AI doesn't understand "hero image" visually
+
+**Veo 2 prompt formula that works:**
+`[Camera movement] [through/over/across] [specific scene], [lighting], [cinematic quality descriptor]`
+
+Good: `"Slow cinematic dolly forward through auto repair shop, warm tungsten light, shallow depth of field, 24fps film grain"`
+
+**Image validation after generation:**
 ```bash
-# Run Lighthouse audit after deploy
-npx lighthouse https://your-site.netlify.app --output=json --quiet | jq '.categories | {performance: .performance.score, seo: .seo.score, accessibility: .accessibility.score}'
+for img in /tmp/rebuild/[business-name]/assets/*.{jpg,png,webp,mp4}; do
+  [ -f "$img" ] || continue
+  SIZE=$(stat -f%z "$img" 2>/dev/null || stat --format=%s "$img")
+  [ "$SIZE" -lt 10000 ] && echo "WARNING: $img is ${SIZE}B — corrupt, regenerate or use fallback" || echo "OK: $img"
+done
 ```
-
-**Targets:**
-- LCP (Largest Contentful Paint): < 2.5s
-- FID/INP (Interaction to Next Paint): < 200ms
-- CLS (Cumulative Layout Shift): < 0.1
-- Performance score: 90+
-- SEO score: 95+
-
-**Quick wins for performance:**
-```html
-<!-- Preload critical fonts -->
-<link rel="preload" href="/fonts/display.woff2" as="font" type="font/woff2" crossorigin>
-
-<!-- Lazy load below-fold images -->
-<img src="team.jpg" loading="lazy" alt="...">
-
-<!-- Defer non-critical JS -->
-<script src="animations.js" defer></script>
-```
-
-**Claude Code prompt for Core Web Vitals:**
-```
-Audit this site for Core Web Vitals. Check:
-1. Are all images using lazy loading below the fold?
-2. Are fonts preloaded?
-3. Is there any layout shift from images without dimensions?
-4. Are animations using CSS transforms (not layout properties)?
-5. Is JS deferred where possible?
-Fix any issues you find and ensure LCP < 2.5s.
-```
-
-### GEO Optimization (Generative Engine Optimization)
-
-GEO = optimizing to be cited by AI search engines: ChatGPT, Perplexity, Claude, Gemini, Grok.
-
-This is new but already matters. When someone asks "what's the best dentist in Chicago" to an AI assistant, you want your client's name to appear. Here's how:
-
-**Why it works:** AI engines pull from authoritative, well-structured content. They favor:
-- Clear factual statements ("Bright Smile Dental has served Chicago since 2008")
-- Specific data points ("Over 2,400 5-star reviews")
-- FAQ-format content (question → direct answer)
-- Named entities (real people, real addresses, real credentials)
-- Content that other sites link to or quote
-
-**GEO Implementation checklist:**
-
-**1. FAQ page with direct-answer format**
-Every question answered in the first sentence, then expanded:
-```
-Q: How much does teeth whitening cost in Chicago?
-A: Professional teeth whitening in Chicago typically costs $300-$600 at Bright Smile Dental, depending on the treatment type. In-office whitening starts at $299 for a 1-hour session...
-```
-
-**2. About page with specific credentials**
-AI engines weight named entities and credentials heavily:
-```
-Dr. Sarah Chen, DDS, has practiced dentistry in Chicago's Lincoln Park neighborhood since 2008. She completed her dental degree at Northwestern University Dental School and holds a certificate in cosmetic dentistry from the American Academy of Cosmetic Dentistry.
-```
-
-**3. Statistics and data points**
-Specific numbers make content more citable:
-```
-"We've completed over 4,200 teeth whitening treatments since 2015, with a 97% patient satisfaction rate across 2,400+ Google reviews."
-```
-
-**4. Clear entity markup**
-Help AI understand who/what this is with schema:
-```json
-{
-  "@type": "Dentist",
-  "name": "Bright Smile Dental",
-  "medicalSpecialty": "Dentistry",
-  "award": "Chicago Magazine Top Dentist 2023, 2024",
-  "numberOfEmployees": 12,
-  "foundingDate": "2008"
-}
-```
-
-**5. Mention-worthy content**
-Write one genuinely useful piece per niche that other sites would want to link to or AI would want to cite:
-```
-Example: "Complete Guide to Teeth Whitening in Chicago: Costs, Options, and What to Expect"
-— 1500+ words, covers all options, includes real pricing, answers the questions people actually ask
-```
-
-**6. Local citations (AI checks these)**
-Ensure NAP (Name, Address, Phone) is consistent across:
-- Google Business Profile (mandatory — set this up for every client)
-- Yelp
-- Apple Maps
-- Bing Places
-- Industry directories (Healthgrades for medical, Avvo for lawyers, etc.)
-
-**GEO Claude Code prompt:**
-```
-Add GEO optimization to this website. I need it to appear in AI search engine results when people ask about [service] in [city].
-
-Add:
-1. A /faq page with 15 questions answered in direct-answer format (question first, answer in first sentence)
-2. Update the /about page to include specific credentials, founding date, number of clients served, and any awards
-3. Add specific statistics and data points throughout the site (reviews count, years in business, clients served)
-4. Update JSON-LD schema to include all business details: specialty, awards, employee count, founding date
-5. Write one 1500-word authoritative guide page at /guide/[topic] that thoroughly answers the most common question in this niche
-
-Make every claim specific and verifiable. Avoid vague marketing language.
-```
-
-### SEO Pitch to Client
-
-Use this when selling the upgrade or justifying the $10K price:
-
-> "The site I'm building you isn't just a redesign — it's engineered to rank. Your current site has one page. The new one will have 12+ pages, each targeting a different search term your customers are using right now. We're also optimizing for AI search — when someone asks ChatGPT or Google's AI who the best [service] in [city] is, I want your name to come up. That's GEO optimization, and most agencies aren't doing it yet. This is a competitive advantage window that closes as more businesses catch on."
 
 ---
 
+## Design Quality Gate v2
+
+Score each item 0/1. Must score **10/12 minimum** to deploy. Below 10 = rebuild.
+
+```
+FIRST IMPRESSION (1440px):
+[ ] 1. Within 3 seconds: clear what business does + why they're good?
+[ ] 2. Clear CTA visible (button, not text link)?
+[ ] 3. Hero feels different from a generic template (matches Die 3 + Die 6)?
+
+SCROLL EXPERIENCE:
+[ ] 4. At least 3 things animate/appear/move on scroll?
+[ ] 5. Sections have varied heights and densities?
+[ ] 6. At least ONE element breaks the grid (overlap, bleed, asymmetry)?
+
+TYPOGRAPHY & COLOR:
+[ ] 7. Headings and body text visually distinct (2:1 size ratio minimum)?
+[ ] 8. Accent color used sparingly (10% rule — not everywhere)?
+[ ] 9. Color palette matches business mood (see niche overrides)?
+
+MOBILE (375px):
+[ ] 10. Nav collapses to hamburger?
+[ ] 11. All text readable, no horizontal scroll?
+[ ] 12. Primary CTA tappable with thumb (≥44px)?
+
+SCORE: ___/12
+```
+
+**Automated quality checks — add to Completion Gate bash script:**
+```bash
+# GSAP on every page
+for f in $(find "$BUILD_DIR" -name "*.html"); do
+  grep -q "gsap.min.js" "$f" || { echo "FAIL: $f missing GSAP"; PASS=false; }
+  grep -q "ScrollTrigger.min.js" "$f" || { echo "FAIL: $f missing ScrollTrigger"; PASS=false; }
+done
+# registerPlugin in main.js
+[ -f "$BUILD_DIR/js/main.js" ] && ! grep -q "registerPlugin" "$BUILD_DIR/js/main.js" && { echo "FAIL: missing registerPlugin"; PASS=false; }
+# Die 6 comment in index.html
+grep -q "Die 6" "$BUILD_DIR/index.html" || { echo "FAIL: missing design roll comment"; PASS=false; }
+# At least 3 ScrollTrigger usages
+SCROLL_COUNT=$(grep -c "scrollTrigger\|ScrollTrigger" "$BUILD_DIR/js/main.js" 2>/dev/null || echo 0)
+[ "$SCROLL_COUNT" -lt 3 ] && echo "WARN: Only $SCROLL_COUNT scroll triggers (want ≥3)"
+# nav + footer on every page
+for f in $(find "$BUILD_DIR" -name "*.html"); do
+  grep -q "<nav" "$f" || { echo "FAIL: $f missing <nav>"; PASS=false; }
+  grep -q "<footer" "$f" || { echo "FAIL: $f missing <footer>"; PASS=false; }
+done
+```
+
 ---
 
-## Anthropic Frontend Design + Web Interface Guidelines + SEO Audit — Synthesized
+## Design Memory — Mandatory Diversity Tracking
 
-### The Core Design Philosophy (from Anthropic's frontend-design skill)
-
-Every website rebuild must start with a committed aesthetic direction — not a vague brief but a specific, named style. Before a single line of code is written, decide: is this brutalist, maximalist, retro-futuristic, organic, luxury, editorial, art deco, or something else entirely? The Anthropic frontend skill is explicit: pick an extreme and execute it with precision. Timid "balanced" design is forgettable design. Bold maximalism and refined minimalism both win awards — mediocre middle-ground doesn't.
-
-The typography rule is non-negotiable: never Inter, Roboto, Arial, or system fonts. Every rebuilt site must use a distinctive display font paired with a refined body font. The Anthropic skill recommends pairing unexpected, characterful display fonts with refined body fonts — a combination that immediately signals professional design rather than AI-generated slop. Match the font pairing to the aesthetic direction: Neue Machina fits tech/industrial, Monument Extended fits luxury/fashion, Satoshi fits modern minimal, Clash Display fits editorial.
-
-Color must follow the dominant + sharp accent rule: pick one dominant color and one strong accent, never distribute colors evenly across the palette. Dominant colors with sharp accents outperform timid, evenly-distributed palettes every time.
-
-For motion: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Prioritize CSS-only animations for performance. Use scroll-triggering and hover states that surprise. The bar for "good enough" is: does someone stop scrolling and say "how did they do that?"
-
-**Web Interface Guidelines checklist** (run this after every build):
-- Fetch the live guidelines from `https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md` and run a compliance audit against every page
-- Check: tap target sizes ≥ 44px, color contrast ≥ 4.5:1, viewport meta tag present, no horizontal scroll on mobile, all interactive elements keyboard accessible
-- Check: images have alt text, headings follow logical hierarchy, form labels present, error messages descriptive
-- Check: no layout shift on load, animations respect prefers-reduced-motion, focus indicators visible
-
-### SEO Audit (from coreyhaines31/marketingskills)
-
-Run this full audit on every rebuilt site before delivering to the client. This is what separates a $2,500 site from a $10,000 site — the client can see Google rankings improve within 30-90 days.
-
-**Priority order for the audit:**
-1. Crawlability & Indexation — can Google find and index every page?
-2. Technical Foundations — is the site fast and functional?
-3. On-Page Optimization — is content optimized per page?
-4. Content Quality — does it deserve to rank?
-5. Authority & Links — does it have credibility signals?
-
-**Technical audit checklist:**
-- robots.txt exists, no important pages blocked, sitemap referenced
-- XML sitemap submitted to Google Search Console, contains only canonical indexable URLs
-- Every important page reachable within 3 clicks from homepage
-- No orphan pages (every page has at least one internal link pointing to it)
-- HTTPS across entire site, valid SSL, no mixed content, HTTP→HTTPS redirect working
-- Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1
-- Mobile responsive, same content as desktop, tap targets ≥ 44px
-
-**On-page audit checklist (run per page):**
-- Unique title tag, primary keyword near the start, 50-60 characters
-- Unique meta description, 150-160 characters, includes keyword + CTA
-- One H1 per page, H1 contains primary keyword, logical H1→H2→H3 hierarchy
-- Keyword appears in first 100 words of body content
-- All images: descriptive file names, alt text, WebP format, lazy loading
-- No keyword cannibalization — each page targets a unique primary keyword
-- Internal links use descriptive anchor text (not "click here")
-
-**Schema markup note:** web_fetch and curl cannot detect JavaScript-injected schema (Yoast, AIOSEO, RankMath inject JSON-LD via JS). Always validate schema using Google's Rich Results Test (search.google.com/test/rich-results) — it renders JavaScript. Never report "no schema found" based solely on curl output.
-
-**Claude Code prompt for running the full SEO audit:**
-```
-Run a complete SEO audit on this website. Check:
-
-TECHNICAL:
-1. Does robots.txt exist and is it blocking anything important?
-2. Is there an XML sitemap? Does it include all pages?
-3. Are all pages reachable within 3 clicks from the homepage?
-4. Is HTTPS working with a valid SSL cert and HTTP→HTTPS redirect?
-5. Run a Lighthouse audit and report Core Web Vitals scores
-
-ON-PAGE (check each page):
-6. Are title tags unique, 50-60 chars, with keyword near the start?
-7. Are meta descriptions unique, 150-160 chars, with keyword + CTA?
-8. Does each page have exactly one H1 with the target keyword?
-9. Are all images using alt text and lazy loading?
-10. Is there JSON-LD structured data on every page?
-
-Report all findings with impact level (High/Medium/Low) and exact fixes for each issue.
+After every successful deploy, append to the log:
+```bash
+echo "[$(date +%Y-%m-%d)] [BUSINESS_NAME] | Nav:$DIE1 Colors:$DIE2 Hero:$DIE3 Layout:$DIE4 Motion:$DIE5 Sections:$DIE6" \
+  >> /Users/andreofastora/.openclaw/workspace/design-memory.log
 ```
 
-**E-E-A-T signals to add for every client site:**
-- Author/owner bio page with real credentials, years in business, certifications
-- Physical address and phone number (boosts local trust)
-- Case studies or testimonials with real names and photos
-- Any awards, press mentions, or industry recognition
-- Privacy policy and terms of service pages (required for Google trust)
+Before rolling dice on a new build, read last 3 entries:
+```bash
+tail -3 /Users/andreofastora/.openclaw/workspace/design-memory.log
+```
 
+**Re-roll rules (enforced):**
+- Same Nav as last build → re-roll Die 1
+- Same Hero as last build → re-roll Die 3
+- Same Section Sequence as last build → re-roll Die 6
+- Same Color System as last 2 builds → re-roll Die 2
+- Same Motion Signature as last 2 builds → re-roll Die 5
+
+---
+
+## Subagent Timeout Recovery Protocol
+
+Sonnet subagents WILL timeout on large builds. This is expected. Plan for it.
+
+**Immediately after subagent returns, run:**
+```bash
+echo "=== TIMEOUT RECOVERY CHECK ==="
+BUILT=$(find /tmp/rebuild/[business-name] -name "*.html" | wc -l)
+EXPECTED=7
+echo "Built: $BUILT / $EXPECTED HTML files"
+[ "$BUILT" -lt "$EXPECTED" ] && echo "PARTIAL BUILD — entering recovery mode"
+for f in index.html about.html contact.html faq.html; do
+  [ ! -f "/tmp/rebuild/[business-name]/$f" ] && echo "MISSING: $f"
+done
+```
+
+**Recovery rules:**
+1. **DO NOT respawn.** Finish missing pages yourself (orchestrating agent). Faster and cheaper.
+2. Read existing `styles.css` and `main.js`. Match design system exactly — same CSS vars, class names, animation patterns.
+3. Copy nav and footer from `index.html` into every missing page verbatim.
+4. Run Completion Gate. Only deploy after gate passes.
+
+**Token budget planning:**
+- Comfortable in 10min: 4-5 pages + shared CSS/JS (~40K tokens)
+- Risky at 10min: 7+ pages with complex animations (~60K+ tokens)
+- Split strategy: 2 subagents — one for core pages (index, about, contact, faq, CSS, JS), one for service pages only.
