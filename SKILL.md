@@ -52,6 +52,8 @@ This is the autonomous execution flow. Run each step in order. No human approval
 │  1. FIND TARGET         → Brave Search          │
 │  2. SCRAPE NAP          → curl + Firecrawl      │
 │  3. STITCH HOMEPAGE     → Google Stitch SDK     │
+│  1b. CONFIRM EMAIL      → 7-step discovery (REQUIRED)  │
+│      No email = discard target, pick new one            │
 │  4. GENERATE IMAGES     → Nano Banana (Imagen)  │
 │  5. EXPAND TO MULTI-PAGE → Claude Code          │
 │  6. RUN COMPLETION GATE → verify files on disk  │
@@ -116,6 +118,11 @@ echo "[$(date +%Y-%m-%d)] [BUSINESS_NAME] | City:[CITY] State:[STATE] Niche:[NIC
 # Signs of a weak site: Wix/Squarespace free subdomain, no HTTPS, copyright year 3+ years old,
 #   broken mobile, phone number not in header, no Google Maps on contact page
 ```
+
+**⚠️ CONFIRM EMAIL BEFORE COMMITTING TO THIS TARGET.**
+Before logging to target-memory.log or doing any build work, run the full email discovery sequence (see Step 2) on the candidate. If no email found after all 7 steps → **discard this target, pick a new one.** Do NOT build a site for a business you cannot contact. Time spent building an unreachable target is wasted.
+
+Only after confirmed email found: log to target-memory.log and proceed to Step 2.
 
 ### Step 2: Scrape NAP (Name, Address, Phone)
 ```bash
