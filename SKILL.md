@@ -69,6 +69,7 @@ Before picking a niche and city, check the target memory log:
 ```bash
 tail -10 /Users/andreofastora/.openclaw/workspace/target-memory.log 2>/dev/null || echo "No log yet"
 ```
+**If the log file doesn't exist or is empty:** This is a first run. Create the file and proceed — but still use the shell randomizer below for city selection (do NOT default to Chicago or any hardcoded city).
 
 **Re-pick rules (enforced, not suggested):**
 - If last build was in Chicago → pick a different city this time
@@ -81,11 +82,18 @@ tail -10 /Users/andreofastora/.openclaw/workspace/target-memory.log 2>/dev/null 
 
 Northeast: Boston, Philadelphia, New York, Baltimore, Pittsburgh, Providence, Hartford, Buffalo
 Southeast: Miami, Atlanta, Tampa, Charlotte, Nashville, Orlando, Raleigh, Jacksonville, New Orleans, Richmond
-Midwest: Chicago, Houston, Dallas, San Antonio, Columbus, Indianapolis, Detroit, Kansas City, Milwaukee, Minneapolis, Cincinnati, Cleveland, Louisville, St. Louis, Oklahoma City
+Midwest: Chicago, Columbus, Indianapolis, Detroit, Kansas City, Milwaukee, Minneapolis, Cincinnati, Cleveland, Louisville, St. Louis, Oklahoma City
 West: Phoenix, Denver, Seattle, Las Vegas, Portland, Salt Lake City, Tucson, Albuquerque, Sacramento, Fresno, Colorado Springs, Bakersfield
-Southwest: San Diego, El Paso, Fort Worth, Corpus Christi, Lubbock, Amarillo, Brownsville, Laredo
+Texas/Southwest: Houston, Dallas, San Antonio, Fort Worth, El Paso, San Diego, Corpus Christi, Lubbock, Amarillo, Brownsville, Laredo, Austin
 
-Pick at random from the full list above. Use the log to avoid repeating a city used in the last 5 builds.
+Pick using shell randomization — do NOT rely on LLM "randomness" (it's biased toward common cities). Use:
+```bash
+# Randomize city selection
+CITIES=("Boston" "Philadelphia" "Miami" "Atlanta" "Tampa" "Charlotte" "Nashville" "Phoenix" "Denver" "Seattle" "Las Vegas" "Portland" "Houston" "Dallas" "San Antonio" "Columbus" "Indianapolis" "Detroit" "Kansas City" "Milwaukee" "Minneapolis" "Cincinnati" "Orlando" "Raleigh" "Jacksonville" "New Orleans" "Richmond" "Salt Lake City" "Tucson" "Sacramento" "El Paso" "Fort Worth" "Austin" "Pittsburgh" "Providence" "Buffalo" "Baltimore" "New York" "San Diego" "Louisville" "St. Louis" "Oklahoma City" "Fresno" "Colorado Springs")
+CITY=${CITIES[$RANDOM % ${#CITIES[@]}]}
+echo "Selected city: $CITY"
+```
+Then check the log to verify it wasn't used in the last 5 builds. If it was, re-run the randomizer.
 
 **Approved niche rotation (alternate between categories):**
 - Trades: auto repair, roofing, plumbing, HVAC, electrician, landscaping
@@ -458,14 +466,14 @@ Notion: <https://www.notion.so/[NOTION_PAGE_ID_NO_DASHES]>
 Emailed [OWNER_EMAIL]
 ```
 
-**Rules:**
+**Rules (READ EVERY LINE — Haiku models: do NOT skip):**
 - Post to #announcements ONLY (channel ID: 1480787296729960468)
 - **WRAP ALL URLS IN `<angle brackets>`** — e.g. `<https://example.com>` — this suppresses Discord link previews. Never paste a bare URL.
-- Use Discord message tool with components container block — NOT plain text
+- Use Discord `message` tool with `action: "send"` and `components` container block — NOT a plain `message` with just text
 - DO NOT paste the full email body in Discord — forward it to Hari's email instead (see below)
-- **NO narration at any point during the run** — no "spawning subagent", "let me yield", "pipeline running" etc.
+- **ZERO messages before this point.** This is the FIRST and ONLY `message` tool call in the entire pipeline. No "starting", no "working on it", no "pipeline complete", no status updates. ONE card. That's it.
 - ONE message total — after all builds complete, not one per site
-- This is the only Discord message — no other channels
+- This is the only Discord message — no other channels, no #general, no threads
 
 **After posting to #announcements, forward the email via AgentMail:**
 ```bash
@@ -832,7 +840,8 @@ Every rebuild produces this file tree. No exceptions:
 ├── js/
 │   └── main.js                ← Shared GSAP + interactions
 ├── sitemap.xml                ← XML sitemap with all pages
-└── robots.txt                 ← Points to sitemap
+├── robots.txt                 ← Points to sitemap
+└── 404.html                   ← Copy of index.html (GitHub Pages subpage fallback)
 ```
 
 ### Shared Components Across Pages
@@ -1431,7 +1440,7 @@ Use for all new builds. Key rules:
 
 - **DESIGN_VARIANCE: 8** | **MOTION_INTENSITY: 6** | **VISUAL_DENSITY: 4**
 - Framework: React or vanilla HTML. Styling: Tailwind CSS.
-- BANNED: Inter font, purple gradients, centered hero (when variance > 4), 3-column equal card grids, h-screen (use min-h-[100dvh])
+- BANNED: Inter font, purple gradients, centered hero (when variance > 4), 3-column equal card grids, h-screen (use `min-h-[100svh] min-h-[100dvh]` — svh first as fallback, dvh as progressive enhancement per Hard Rule 10)
 - Typography: text-4xl md:text-6xl tracking-tighter. Use Geist, Outfit, Cabinet Grotesk, Satoshi.
 - Motion: Spring physics on all interactive elements. Staggered orchestration on mount. Animate only transform + opacity.
 - Liquid Glass: backdrop-blur + 1px inner border + inner shadow.
@@ -1487,14 +1496,14 @@ Uses GSAP state transitions: `gsap.to(current, {opacity:0, x:-50})` then `gsap.f
   },
   "payload": {
     "kind": "agentTurn",
-    "model": "haiku",
-    "message": "Read the website-remake skill at ~/.openclaw/workspace/skills/website-remake/SKILL.md. Execute the PIPELINE EXECUTION CHECKLIST top to bottom for niche=dentist, city=chicago, limit=1. Find one target, scrape NAP, generate hero video + images, build ALL pages (index + services + about + contact + faq), run COMPLETION GATE, deploy to Netlify, log to Notion, send cold email via AgentMail (sender: forgeaiseo@agentmail.to). Post summary to #website-rebuilder."
+    "model": "sonnet",
+    "message": "Read the website-remake skill at ~/.openclaw/workspace/skills/website-remake/SKILL.md. Execute the PIPELINE EXECUTION CHECKLIST top to bottom. Use target-memory.log to pick a ROTATED niche and city per the rotation rules — do NOT hardcode any niche or city. Find one target, scrape NAP, generate homepage via Stitch + images via Imagen 4, build ALL pages (index + services + about + contact + faq), run COMPLETION GATE, deploy to GitHub Pages, log to Notion, send cold email via AgentMail (sender: forgeaiseo@agentmail.to). Post ONE summary card to #announcements."
   },
   "sessionTarget": "isolated",
   "delivery": {
     "mode": "announce",
     "channel": "discord",
-    "to": "#website-rebuilder"
+    "to": "#announcements"
   },
   "enabled": false
 }
@@ -1506,11 +1515,12 @@ All must be in `~/.openclaw/workspace/.secrets/`:
 
 | File | Used By |
 |------|---------|
-| `gemini-api-key.txt` | Imagen 4 + Veo video generation |
-| `firecrawl-api-key.txt` | Site scraping |
-| `netlify-token.txt` | Deployment |
-| `agentmail-api-key.txt` | Cold email sending |
-| `notion.env` | Pipeline logging |
+| `stitch-api-key.txt` | Google Stitch SDK (Step 3) |
+| `gemini-api-key.txt` | Imagen 4 image generation (Step 4) |
+| `firecrawl-api-key.txt` | Site scraping (Step 2) |
+| `agentmail-api-key.txt` | Cold email sending (Step 9) |
+| `notion.env` | Pipeline logging (Step 8) |
+| `netlify-token.txt` | Production handoff only (NOT used in demo pipeline) |
 
 ---
 
@@ -1563,13 +1573,14 @@ Every build must include these breakpoints at the bottom of `styles.css`:
 - All grids → single column at 768px
 - Hamburger nav for 3+ links
 - `max-width: 100%` on all images
+- **Viewport height: always `min-height: 100svh; min-height: 100dvh;`** — never bare `100dvh` (Hard Rule 10)
 
 ---
 
 ## REFERENCE BUILD — What Success Looks Like
 
 **Takase Auto Repair — Chicago, IL | March 19, 2026**
-Live demo: https://takase-auto-rebuild.netlify.app
+Live demo: https://oh-ashen-one.github.io/takase-auto-rebuild
 Approved by Hari as the gold standard for this skill.
 
 ### Target profile
@@ -1581,12 +1592,11 @@ Approved by Hari as the gold standard for this skill.
 
 ### Design roll
 ```
-Die 1 Nav:      5 — Sticky headline bar (massive on load, shrinks on scroll)
-Die 2 Colors:   7 — Monochrome +1 (black #111111, white text, marigold #F2C94C accent)
-Die 3 Hero:     1 — Full-bleed Veo video, dark gradient overlay
-Die 4 Layout:   6 — Classic 12-column grid, micro-details, sophisticated typography
-Die 5 Motion:   3 — Horizontal marquee (infinite scroll for trust signals/stats)
-Die 6 Sections: 1 — Manifesto First: brand statement → gallery → testimonial wall → services accordion → sticky CTA bar
+Color (d8):    7 — Monochrome +1 (black #111111, white text, marigold #F2C94C accent)
+Nav (d4):      3 — Sticky shrink (massive on load, shrinks on scroll)
+Hero (d4):     1 — Full-bleed Veo video, dark gradient overlay
+Motion (d6):   6 — Horizontal marquee (infinite scroll for trust signals/stats)
+Sections (d4): 1 — Hero → Services (tabbed) → Trust signals/stats → Testimonials → FAQ → Contact
 ```
 
 ### What made this a clean run
