@@ -75,8 +75,15 @@ tail -10 /Users/andreofastora/.openclaw/workspace/target-memory.log 2>/dev/null 
 - If last 2 builds were trades (auto, roofing, plumbing, HVAC) → pick a service business (dentist, law, salon, restaurant)
 - Never pick the same niche+city combination twice in a row
 
-**Approved city rotation (cycle through these, don't repeat):**
-Chicago → Houston → Phoenix → Dallas → San Antonio → Miami → Atlanta → Denver → Seattle → Nashville → back to Chicago
+**Approved city rotation (do NOT repeat the same city within 5 builds — use the log to check):**
+
+Northeast: Boston, Philadelphia, New York, Baltimore, Pittsburgh, Providence, Hartford, Buffalo
+Southeast: Miami, Atlanta, Tampa, Charlotte, Nashville, Orlando, Raleigh, Jacksonville, New Orleans, Richmond
+Midwest: Chicago, Houston, Dallas, San Antonio, Columbus, Indianapolis, Detroit, Kansas City, Milwaukee, Minneapolis, Cincinnati, Cleveland, Louisville, St. Louis, Oklahoma City
+West: Phoenix, Denver, Seattle, Las Vegas, Portland, Salt Lake City, Tucson, Albuquerque, Sacramento, Fresno, Colorado Springs, Bakersfield
+Southwest: San Diego, El Paso, Fort Worth, Corpus Christi, Lubbock, Amarillo, Brownsville, Laredo
+
+Pick at random from the full list above. Use the log to avoid repeating a city used in the last 5 builds.
 
 **Approved niche rotation (alternate between categories):**
 - Trades: auto repair, roofing, plumbing, HVAC, electrician, landscaping
