@@ -146,6 +146,13 @@ curl -sL "https://[TARGET_SITE]" | grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s
 5. web_fetch: "[original site]/contact" or "[original site]/contact-us"
    → look harder — email is often only on the contact subpage, not homepage
 6. web_search: "[owner name] [business name] email" (if owner name known from site)
+7. INSPECT CONTACT FORM SOURCE — fetch the raw HTML of the contact page and grep for:
+   → mailto: links: <a href="mailto:someone@domain.com">
+   → hidden input fields: <input type="hidden" name="recipient" value="...">
+   → form action URLs: <form action="https://formspree.io/f/XXXXX"> (Formspree leaks email in API)
+   → JS config objects: look for email strings in inline <script> tags
+   → grep pattern: grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' on the raw HTML
+   → Filter out: noreply@, wordpress@, plugin@ addresses — those are system emails not owner emails
 ```
 
 **If email found via any of the above:** use it. Log the source (e.g. "found via Yelp").
