@@ -15,12 +15,11 @@ metadata:
     requires:
       env:
         - STITCH_API_KEY
-        - NETLIFY_TOKEN
         - GEMINI_API_KEY
         - AGENTMAIL_API_KEY
 ---
 
-# Website Remake — Master Skill v4
+# Website Remake — Master Skill v5
 
 ---
 
@@ -28,13 +27,16 @@ metadata:
 
 1. **NO EMOJIS** in the built site. Ever. Use SVG icons or icon fonts (Lucide, Heroicons, Phosphor).
 2. **DARK MODE MANDATORY.** Background must never be `#FFFFFF`, `#F5F5F5`, `#FAFAFA`, or any near-white. Use rich dark tones: charcoal, dark navy, deep forest, dark teal, espresso. White/cream is text/accent only.
-3. **MOBILE-FIRST MANDATORY.** CSS written mobile-first (`min-width` media queries to scale up). Touch targets ≥ 44px. `clamp()` for headlines. Grid/flex collapse at 768px. Hamburger nav required. `max-width: 100%` on all images. Test at 375px, 390px, 768px.
+3. **MOBILE-FIRST MANDATORY.** CSS written mobile-first (`min-width` media queries to scale up). Touch targets ≥ 44px. `clamp()` for headlines. Grid/flex collapse at 768px. Hamburger nav required. `max-width: 100%` on all images. Test at 375px, 390px, 768px. **NEVER use `min-height: 100dvh` without a `100svh` fallback.** Mobile Safari calculates `100dvh` dynamically as the toolbar hides, causing layout jank and content jumping. Always write: `min-height: 100svh; min-height: 100dvh;` (svh first as fallback, dvh as progressive enhancement). This applies to hero sections, full-screen modals, and any viewport-height element.
 4. **NO PURPLE.** No violet, indigo, lavender — not as gradient, not as accent, not anywhere. This is the #1 AI slop tell.
 5. **NO FAKE DATA.** Never invent phone numbers, addresses, or business names. Extract verbatim from the original site or leave `<!-- TODO: INSERT REAL [FIELD] -->`.
 6. **MULTI-PAGE ARCHITECTURE MANDATORY.** Every build produces multiple HTML files. A single `index.html` is a FAILED BUILD. See Completion Gate below.
 7. **NEVER use Vercel or Wix.** Deploy demos to GitHub Pages (free). Netlify is for production handoff after client payment only.
 8. **DISCORD: WRAP ALL URLS IN `<angle brackets>`.** Always post links as `<https://example.com>` — never bare URLs. Bare URLs generate large link previews that pollute #announcements.
 9. **DISCORD: ONE MESSAGE, SILENT RUN.** No narration during the run. No "spawning", "yielding", "pipeline running" messages. Post one clean components card to #announcements only when all builds are done.
+10. **GSAP: NEVER `gsap.from()` WITH `opacity:0` WITHOUT CSS FALLBACK.** If ScrollTrigger fails on mobile (iOS Safari), elements stay permanently invisible — entire sections appear blank. ALWAYS add `opacity:1!important;transform:none!important` for all animated elements in a `@media(max-width:767px)` rule. Use `gsap.fromTo()` not `gsap.from()`. Call `ScrollTrigger.refresh()` on `window.load`. See GSAP Patterns section.
+11. **HERO HEIGHT: NEVER `min-height:100dvh` ALONE.** Always use: `min-height:600px; min-height:100svh; min-height:100dvh;` — the svh fallback prevents iOS browser chrome from adding a gap below the hero. **ZERO Discord messages until Step 10.** Not one. The only `message` tool call in the entire pipeline is the final card post.
+10. **VIEWPORT HEIGHT: SVH BEFORE DVH.** Never write `min-height: 100dvh` alone. Always pair: `min-height: 100svh; min-height: 100dvh;` — svh first (stable fallback), dvh second (progressive enhancement). `100dvh` alone causes hero sections to resize/jump on mobile Safari as the URL bar shows/hides. This rule applies to all viewport-height declarations in heroes, modals, and full-screen sections.
 
 ---
 
@@ -118,6 +120,13 @@ curl -sL "https://[TARGET_SITE]" | grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s
 #   ADDRESS: [exact]
 #   SERVICES: [list from site]
 ```
+
+**NAP SCRAPE FAILURE HANDLING — MANDATORY:**
+- **No phone found:** Search `"[business name] [city] phone number"` via Brave. Check Google Maps listing, Yelp, BBB. If still nothing → use `<!-- TODO: INSERT REAL PHONE -->` in HTML and note in Notion: "Phone not found — needs manual lookup."
+- **No email found:** This is expected for most businesses. Do NOT invent an email. Search Google Maps, Yelp, BBB, Facebook for contact email. If still nothing → skip Step 9 (cold email), set `Email Sent: false` in Notion, note "No email found — outreach deferred." Still deploy and post to Discord.
+- **No address found:** Search Google Maps for `"[business name] [city]"`. If not found → use `<!-- TODO: INSERT REAL ADDRESS -->` and skip map embed.
+- **Site completely unreachable (4xx/5xx):** Try with `www.` prefix and without. Try HTTP if HTTPS fails. If all fail → **skip this target entirely**, pick a new one, and restart Step 1. Do NOT build for a dead site.
+- **NEVER proceed to Step 3 with an empty BUSINESS_NAME or empty SERVICES list.** These are pipeline-halt conditions — pick a new target.
 
 ### Step 3: Generate Homepage with Google Stitch
 
@@ -237,6 +246,13 @@ OUTPUT: Clean semantic HTML + embedded CSS. No external dependencies except GSAP
 - Save the screenshot to `/tmp/rebuild/[slug]/assets/stitch-preview.jpg`
 - The Stitch HTML is the homepage. Claude Code expands it in Step 5.
 
+**STITCH FAILURE HANDLING — MANDATORY:**
+- **API error / timeout:** Retry once after 10 seconds. If second attempt fails → fall back to Claude Code writing the homepage HTML directly using the design system dice rolls and niche vibe rules. Log: "Stitch unavailable — homepage written by Claude Code."
+- **Empty or malformed HTML returned (< 500 bytes):** Treat as failure. Do NOT deploy a broken homepage. Fall back to Claude Code.
+- **HTML has white/near-white background:** Override in `styles.css` with `body { background: #131313; color: #f0f0f0; }` — do this automatically, do not re-call Stitch.
+- **HTML contains purple/emojis:** Strip in Step 5 expansion. These are cosmetic fixes, not pipeline-halting.
+- **Screenshot URL missing:** Non-blocking. Proceed without `stitch-preview.jpg`.
+
 **Stitch design system extraction (optional — use for existing branded clients):**
 ```javascript
 // Extract design system from any URL
@@ -283,12 +299,28 @@ generate_image(f"Professional action shot of {SERVICES[2]} work being done, dark
 After generating, swap the placeholder images in the Stitch HTML with these real ones.
 
 ### Step 5: Expand to Multi-Page Architecture
-Claude Code takes the Stitch homepage and builds out the full required file structure.
+Claude Code takes the Stitch homepage and builds out the full required file structure. **This is the largest step.** Follow the "Building the Remake — Multi-Page Architecture" section below exactly. Required outputs:
+1. Extract the design system from Stitch's `index.html` (colors, fonts, spacing) into `css/styles.css`
+2. Create `js/main.js` with GSAP ScrollTrigger setup (see "GSAP Boilerplate" section below)
+3. Build every page listed in "Required Page Structure": `about.html`, `contact.html`, `faq.html`, `services/[service-1].html`, `services/[service-2].html` (minimum)
+4. Generate `sitemap.xml` and `robots.txt`
+5. Ensure shared nav and footer are identical across all pages
+6. Swap Stitch placeholder images with Nano Banana images from Step 4
+7. Add the `100svh`/`100dvh` viewport-height fallback to any hero or full-screen section (see Hard Rule 10)
+
+**Do NOT consider Step 5 complete until all files in "Required Page Structure" exist on disk.**
 
 ### Step 6: Run Completion Gate
 See "COMPLETION GATE" section below. Build is not done until gate passes.
 
 ### Step 7: Deploy to GitHub Pages (FREE — outreach demos only)
+
+**Pre-deploy: Create 404.html for GitHub Pages SPA routing:**
+```bash
+# GitHub Pages returns 404 for direct subpage access. Copy index.html as 404 fallback.
+cp "$SITE_DIR/index.html" "$SITE_DIR/404.html"
+```
+
 ```bash
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$PATH"
 SITE_SLUG="[business-name-slug]"  # e.g. takase-auto-rebuild
@@ -314,14 +346,34 @@ DEMO_URL="https://oh-ashen-one.github.io/$SITE_SLUG"
 echo "Demo URL: $DEMO_URL"
 ```
 
+**DEPLOY FAILURE HANDLING — MANDATORY:**
+- **`gh repo create` fails (repo already exists):** Run `gh repo delete "oh-ashen-one/$SITE_SLUG" --yes` then retry. If delete also fails → append `-v2` to the slug and retry.
+- **`gh repo create` fails (auth error):** Check `gh auth status`. If not authenticated → **halt pipeline**, post error to #general (not #announcements). This requires human intervention.
+- **`gh api pages` fails (409 conflict — Pages already enabled):** Ignore and proceed — Pages is already on.
+- **`gh api pages` fails (other error):** Push was successful, so Pages may auto-enable. Wait 90 seconds, then `curl -sI "$DEMO_URL"`. If 200 → proceed. If 404 after 90s → retry the Pages API call once.
+- **After deploy, verify the site is live before sending email:**
+```bash
+sleep 60
+HTTP_STATUS=$(curl -sI "$DEMO_URL" -o /dev/null -w "%{http_code}")
+if [ "$HTTP_STATUS" != "200" ]; then
+  echo "WARN: Site returned $HTTP_STATUS — waiting 60 more seconds"
+  sleep 60
+  HTTP_STATUS=$(curl -sI "$DEMO_URL" -o /dev/null -w "%{http_code}")
+  [ "$HTTP_STATUS" != "200" ] && echo "ERROR: Site still not live. Proceed with caution."
+fi
+```
+
 **Why GitHub Pages:**
 - Free. Zero monthly cost. No account limits for public repos.
 - These are outreach demos — not production sites. They just need to be viewable.
 - Netlify is for production only: ForgeAI SEO itself, client handoffs after payment.
 - GitHub Pages URL format: `oh-ashen-one.github.io/[site-slug]`
-- Pages goes live in ~60 seconds after push. Wait before sending the cold email.
+- Pages goes live in ~60 seconds after push. Wait and verify before sending the cold email.
 
 ### Step 8: Log to Notion
+
+**Capture the NOTION_PAGE_ID from the response — you need it for Step 9's post-email update and Step 10's Discord card.**
+
 ```bash
 NOTION_TOKEN=$(cat ~/.openclaw/workspace/.secrets/notion.env | grep NOTION_API_KEY | cut -d= -f2)
 DB_ID="327664f6-a1e3-81e8-879d-ff9d14f95213"
@@ -346,7 +398,13 @@ curl -s -X POST "https://api.notion.com/v1/pages" \
       "Notes": {"rich_text": [{"text": {"content": "Demo built [YYYY-MM-DD]. Awaiting email send."}}]}
     }
   }'
+# IMPORTANT: Parse the page ID from the response — store it for Step 9 and Step 10
+# Example: NOTION_PAGE_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
 ```
+
+**NOTION FAILURE HANDLING:**
+- **API returns 4xx/5xx:** Retry once. If still fails → log the build data to a local fallback file: `echo "[DATE] [BUSINESS] [DEMO_URL] [ORIGINAL_URL]" >> /Users/andreofastora/.openclaw/workspace/notion-backlog.log`. Continue pipeline — do not halt for Notion.
+- **NOTION_PAGE_ID not captured:** Use `"N/A"` in the Discord card Notion link. Still proceed with email and Discord post.
 
 ### Step 9: Send Cold Email via AgentMail
 ```bash
@@ -380,7 +438,11 @@ curl -s -X PATCH "https://api.notion.com/v1/pages/[NOTION_PAGE_ID]" \
 echo "Notion updated. Verifying..."
 ```
 
-**Email sender:** `forgeaiseo@agentmail.to` — display name "Alex | Forge"
+**Email sender:** `forgeaiseo@agentmail.to` — display name "Alison | Teza"
+
+**AGENTMAIL FAILURE HANDLING:**
+- **API returns 4xx/5xx:** Retry once after 5 seconds. If still fails → set `Email Sent: false` in Notion, note "AgentMail API error — email not sent." Still proceed to Step 10 Discord post, but change the card text from "Emailed [EMAIL]" to "Email FAILED — manual send needed."
+- **No owner email found (from Step 2):** Skip Step 9 entirely. Set `Email Sent: false` in Notion. Discord card says "No email found — outreach deferred."
 
 ---
 
@@ -590,16 +652,11 @@ Before writing any HTML, document your choices at the top of `index.html`:
 DESIGN SYSTEM — [Business Name]
 Niche: [NICHE CATEGORY]
 Vibe: [one sentence describing the locked vibe]
-Color: [roll + system name + hex values]
-Nav: [roll + style name]
-Hero: [roll + type name]
-Motion: [roll + signature name]
-Sections: [roll + sequence description]
--->
-```
-Die 4 Layout: [roll — personality name]
-Die 5 Motion: [roll — signature name]
-Die 6 Sections: [roll — sequence name]
+Color: [d8 roll + system name + hex values]
+Nav: [d4 roll + style name]
+Hero: [d4 roll + type name]
+Motion: [d6 roll + signature name]
+Sections: [d4 roll + sequence description]
 -->
 ```
 
@@ -626,8 +683,11 @@ FILE CHECK (all must exist on disk):
 [ ] faq.html                — FAQ page with FAQPage JSON-LD schema
 [ ] services/[service-1].html — Individual service page #1
 [ ] services/[service-2].html — Individual service page #2
+[ ] css/styles.css           — Shared stylesheet (mobile-first)
+[ ] js/main.js               — Shared GSAP + interactions
 [ ] sitemap.xml             — XML sitemap listing all pages
 [ ] robots.txt              — Robots file referencing sitemap
+[ ] 404.html                — Copy of index.html (GitHub Pages fallback)
 
 CONTENT CHECK (verify in each file):
 [ ] Every page has unique <title> tag (keyword first, 50-60 chars)
@@ -648,6 +708,9 @@ DESIGN CHECK:
 [ ] No purple anywhere
 [ ] Mobile responsive at 375px
 [ ] GSAP animations present and smooth
+[ ] No bare `100dvh` without `100svh` fallback (see Hard Rule 10)
+[ ] Every HTML page loads css/styles.css
+[ ] Every HTML page loads GSAP CDN + ScrollTrigger CDN + js/main.js (in that order)
 
 ASSET CHECK:
 [ ] Hero video or hero image present in assets/
@@ -667,7 +730,7 @@ PASS=true
 echo "=== COMPLETION GATE ==="
 
 # Check required files
-for f in index.html about.html contact.html faq.html sitemap.xml robots.txt; do
+for f in index.html about.html contact.html faq.html sitemap.xml robots.txt 404.html css/styles.css js/main.js; do
   if [ ! -f "$BUILD_DIR/$f" ]; then
     echo "FAIL: Missing $f"
     PASS=false
@@ -700,6 +763,35 @@ for f in $(find "$BUILD_DIR" -name "*.html" -o -name "*.css"); do
     PASS=false
   fi
 done
+
+# Check for bare 100dvh without 100svh fallback (Hard Rule 10)
+for f in $(find "$BUILD_DIR" -name "*.html" -o -name "*.css"); do
+  if grep -qE '100dvh' "$f" && ! grep -qE '100svh' "$f"; then
+    echo "FAIL: $f uses 100dvh without 100svh fallback — see Hard Rule 10"
+    PASS=false
+  fi
+done
+
+# GSAP on every HTML page
+for f in $(find "$BUILD_DIR" -name "*.html"); do
+  grep -q "gsap.min.js" "$f" || { echo "FAIL: $f missing GSAP CDN"; PASS=false; }
+  grep -q "ScrollTrigger.min.js" "$f" || { echo "FAIL: $f missing ScrollTrigger CDN"; PASS=false; }
+  grep -q "<nav" "$f" || { echo "FAIL: $f missing <nav>"; PASS=false; }
+  grep -q "<footer" "$f" || { echo "FAIL: $f missing <footer>"; PASS=false; }
+done
+
+# registerPlugin in main.js
+if [ -f "$BUILD_DIR/js/main.js" ]; then
+  grep -q "registerPlugin" "$BUILD_DIR/js/main.js" || { echo "FAIL: main.js missing gsap.registerPlugin(ScrollTrigger)"; PASS=false; }
+  SCROLL_COUNT=$(grep -c "scrollTrigger\|ScrollTrigger" "$BUILD_DIR/js/main.js" 2>/dev/null || echo 0)
+  [ "$SCROLL_COUNT" -lt 3 ] && echo "WARN: Only $SCROLL_COUNT scroll triggers in main.js (want ≥3)"
+else
+  echo "FAIL: js/main.js does not exist"
+  PASS=false
+fi
+
+# Die roll comment in index.html
+grep -q "DESIGN SYSTEM" "$BUILD_DIR/index.html" || { echo "FAIL: index.html missing design roll comment block"; PASS=false; }
 
 if [ "$PASS" = true ]; then
   echo "=== GATE PASSED — CLEAR TO DEPLOY ==="
@@ -902,23 +994,59 @@ Use Firecrawl for structured content (copy, services, testimonials). But always 
 
 ### GSAP Patterns
 
-**Text reveal (char-by-char stagger):**
+⚠️ **CRITICAL GSAP MOBILE RULES — VIOLATIONS CAUSE BLANK SECTIONS:**
+1. **NEVER use `gsap.from()` with `opacity: 0`** — if ScrollTrigger fails on mobile (iOS Safari timing), elements stay permanently invisible
+2. **ALWAYS add CSS fallback** — every animated element must have `opacity:1;transform:none` in a `@media(max-width:767px)` rule so content is visible even if GSAP fails
+3. **ALWAYS call `ScrollTrigger.refresh()` on `window.load`** — fixes iOS Safari trigger timing
+4. **Use `gsap.fromTo()` not `gsap.from()`** — explicit start AND end states prevent invisible content
+5. **NEVER use `min-height: 100dvh` without `100svh` fallback** — iOS Chrome/Safari include browser chrome in `dvh`, causing a gap below the hero
+
+**Required JS boilerplate in every `main.js`:**
 ```javascript
 gsap.registerPlugin(ScrollTrigger);
 
-// Hero headline
-gsap.to('.headline-word', {
-  duration: 0.8, opacity: 1, y: 0,
-  stagger: 0.15, delay: 0.3, ease: "power3.out"
+// Fix iOS Safari ScrollTrigger timing
+window.addEventListener('load', function() {
+  ScrollTrigger.refresh();
 });
+```
+
+**Required CSS in every `styles.css`:**
+```css
+/* GSAP mobile fallback — prevents invisible content if ScrollTrigger fails */
+@media (max-width: 767px) {
+  .service-card, .testimonial-card, .stat-item, .reveal,
+  .hero-eyebrow, .hero h1, .hero-sub, .hero-ctas, .faq-item {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+/* Hero height — always include svh fallback before dvh */
+.hero {
+  min-height: 600px;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+```
+
+**Text reveal (char-by-char stagger):**
+```javascript
+// Use fromTo — never from() alone
+gsap.fromTo('.headline-word',
+  { opacity: 0, y: 30 },
+  { duration: 0.8, opacity: 1, y: 0, stagger: 0.15, delay: 0.3, ease: "power3.out" }
+);
 ```
 
 **Scroll-triggered cards:**
 ```javascript
-gsap.to(".card", {
-  scrollTrigger: { trigger: ".section", start: "top 80%" },
-  duration: 0.8, opacity: 1, y: 0, stagger: 0.2, ease: "power3.out"
-});
+gsap.fromTo(".card",
+  { opacity: 0, y: 40 },
+  {
+    scrollTrigger: { trigger: ".section", start: "top 80%", once: true },
+    duration: 0.8, opacity: 1, y: 0, stagger: 0.2, ease: "power3.out"
+  }
+);
 ```
 
 **Counter animation:**
@@ -1232,7 +1360,7 @@ Subject: Re: [original subject]
 
 Hi [NAME], did the new site load OK? Here's the link again: [DEMO_URL]
 
-— Alex
+— Alison
 ```
 
 Day 7 — Closing (under 40 words):
@@ -1243,7 +1371,7 @@ Hi [NAME], moving on to other projects this week. If you want
 the site, just reply and I'll send everything over. Otherwise
 no worries at all.
 
-— Alex
+— Alison
 ```
 
 ### AgentMail API
