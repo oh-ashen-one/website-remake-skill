@@ -35,7 +35,8 @@ metadata:
 8. **DISCORD: WRAP ALL URLS IN `<angle brackets>`.** Always post links as `<https://example.com>` — never bare URLs. Bare URLs generate large link previews that pollute #announcements.
 9. **DISCORD: ONE MESSAGE, SILENT RUN.** No narration during the run. No "spawning", "yielding", "pipeline running" messages. Post one clean components card to #announcements only when all builds are done.
 10. **GSAP: NEVER `gsap.from()` WITH `opacity:0` WITHOUT CSS FALLBACK.** If ScrollTrigger fails on mobile (iOS Safari), elements stay permanently invisible — entire sections appear blank. ALWAYS add `opacity:1!important;transform:none!important` for all animated elements in a `@media(max-width:767px)` rule. Use `gsap.fromTo()` not `gsap.from()`. Call `ScrollTrigger.refresh()` on `window.load`. See GSAP Patterns section.
-11. **HERO HEIGHT: NEVER `min-height:100dvh` ALONE.** Always use: `min-height:600px; min-height:100svh; min-height:100dvh;` — the svh fallback prevents iOS browser chrome from adding a gap below the hero. **ZERO Discord messages until Step 10.** Not one. The only `message` tool call in the entire pipeline is the final card post.
+11. **HERO HEIGHT: NEVER `min-height:100dvh` ALONE.** Always use: `min-height:600px; min-height:100svh; min-height:100dvh;` — the svh fallback prevents iOS browser chrome from adding a gap below the hero.
+12. **NEVER GUESS AN EMAIL ADDRESS.** `info@domain.com`, `hello@domain.com`, `contact@domain.com` — all banned unless confirmed on the actual site. If no email on the homepage, run the full 6-step email discovery sequence (Yelp → BBB → Facebook → contact subpage → Google) before giving up. A guessed email that bounces is worse than no email. See Step 2 failure handling. **ZERO Discord messages until Step 10.** Not one. The only `message` tool call in the entire pipeline is the final card post.
 10. **VIEWPORT HEIGHT: SVH BEFORE DVH.** Never write `min-height: 100dvh` alone. Always pair: `min-height: 100svh; min-height: 100dvh;` — svh first (stable fallback), dvh second (progressive enhancement). `100dvh` alone causes hero sections to resize/jump on mobile Safari as the URL bar shows/hides. This rule applies to all viewport-height declarations in heroes, modals, and full-screen sections.
 
 ---
@@ -131,7 +132,24 @@ curl -sL "https://[TARGET_SITE]" | grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s
 
 **NAP SCRAPE FAILURE HANDLING — MANDATORY:**
 - **No phone found:** Search `"[business name] [city] phone number"` via Brave. Check Google Maps listing, Yelp, BBB. If still nothing → use `<!-- TODO: INSERT REAL PHONE -->` in HTML and note in Notion: "Phone not found — needs manual lookup."
-- **No email found:** This is expected for most businesses. Do NOT invent an email. Search Google Maps, Yelp, BBB, Facebook for contact email. If still nothing → skip Step 9 (cold email), set `Email Sent: false` in Notion, note "No email found — outreach deferred." Still deploy and post to Discord.
+- **No email found on site:** Do NOT guess `info@domain.com` or any invented address — guessed emails bounce and waste outreach. Run the full email discovery sequence below before giving up:
+
+**EMAIL DISCOVERY SEQUENCE (run in order, stop when found):**
+```
+1. web_search: "[business name] [city] email contact"
+2. web_search: "[business name] [city] site:yelp.com"
+   → fetch the Yelp page and look for email in the business details
+3. web_search: "[business name] [city] site:bbb.org"
+   → fetch the BBB page and look for email
+4. web_search: "[business name] [city] site:facebook.com"
+   → fetch Facebook page and look for email in About/Contact sections
+5. web_fetch: "[original site]/contact" or "[original site]/contact-us"
+   → look harder — email is often only on the contact subpage, not homepage
+6. web_search: "[owner name] [business name] email" (if owner name known from site)
+```
+
+**If email found via any of the above:** use it. Log the source (e.g. "found via Yelp").
+**If all 6 steps fail:** skip Step 9 entirely. Set `Email Sent: false` in Notion. Discord card says "No email found — outreach deferred." Still deploy and post. Do NOT invent or guess an address.
 - **No address found:** Search Google Maps for `"[business name] [city]"`. If not found → use `<!-- TODO: INSERT REAL ADDRESS -->` and skip map embed.
 - **Site completely unreachable (4xx/5xx):** Try with `www.` prefix and without. Try HTTP if HTTPS fails. If all fail → **skip this target entirely**, pick a new one, and restart Step 1. Do NOT build for a dead site.
 - **NEVER proceed to Step 3 with an empty BUSINESS_NAME or empty SERVICES list.** These are pipeline-halt conditions — pick a new target.
