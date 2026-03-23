@@ -33,6 +33,8 @@ metadata:
 5. **NO FAKE DATA.** Never invent phone numbers, addresses, or business names. Extract verbatim from the original site or leave `<!-- TODO: INSERT REAL [FIELD] -->`.
 6. **MULTI-PAGE ARCHITECTURE MANDATORY.** Every build produces multiple HTML files. A single `index.html` is a FAILED BUILD. See Completion Gate below.
 7. **NEVER use Vercel or Wix.** Deploy demos to GitHub Pages (free). Netlify is for production handoff after client payment only.
+8. **DISCORD: WRAP ALL URLS IN `<angle brackets>`.** Always post links as `<https://example.com>` — never bare URLs. Bare URLs generate large link previews that pollute #announcements.
+9. **DISCORD: ONE MESSAGE, SILENT RUN.** No narration during the run. No "spawning", "yielding", "pipeline running" messages. Post one clean components card to #announcements only when all builds are done.
 
 ---
 
@@ -377,22 +379,23 @@ echo "Notion updated. Verifying..."
 
 ### Step 10: Post to #announcements
 
-After email is sent, post to Discord channel **1480787296729960468** (#announcements) with this exact format — nothing else:
+After email is sent, post ONE message to Discord channel **1480787296729960468** (#announcements) using a **components container block** with this exact format:
 
 ```
 **[BUSINESS_NAME]** — [CITY], [STATE] | [NICHE]
-
-🔴 Old site: [ORIGINAL_URL]
-🟢 New site: [DEMO_URL]
-📋 Notion: https://www.notion.so/[NOTION_PAGE_ID_NO_DASHES]
-
-📧 Emailed [OWNER_EMAIL] — forwarded to Hari's inbox so he can review it there.
+Old site: <[ORIGINAL_URL]>
+New site: <[DEMO_URL]>
+Notion: <https://www.notion.so/[NOTION_PAGE_ID_NO_DASHES]>
+Emailed [OWNER_EMAIL]
 ```
 
 **Rules:**
 - Post to #announcements ONLY (channel ID: 1480787296729960468)
+- **WRAP ALL URLS IN `<angle brackets>`** — e.g. `<https://example.com>` — this suppresses Discord link previews. Never paste a bare URL.
+- Use Discord message tool with components container block — NOT plain text
 - DO NOT paste the full email body in Discord — forward it to Hari's email instead (see below)
-- No narration, no "pipeline complete" — just the 3 lines above
+- **NO narration at any point during the run** — no "spawning subagent", "let me yield", "pipeline running" etc.
+- ONE message total — after all builds complete, not one per site
 - This is the only Discord message — no other channels
 
 **After posting to #announcements, forward the email via AgentMail:**
