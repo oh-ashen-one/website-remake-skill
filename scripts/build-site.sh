@@ -176,7 +176,7 @@ if (!htmlUrl) {
 }
 
 // Extract design system notes
-const designMd = JSON.stringify(screenResult).match(/"designMd":"([^"]{0,2000})"/')?.[1] || '';
+const designMd = JSON.stringify(screenResult).match(/"designMd":"([^"]{0,2000})"/)?.[1] || '';
 if (designMd) {
   writeFileSync('/tmp/stitch-design-$SLUG.md', designMd.replace(/\\n/g, '\n'));
   console.log("Design system saved to /tmp/stitch-design-$SLUG.md");
