@@ -971,7 +971,7 @@ Build ALL pages before moving to the Completion Gate. Suggested order:
 
 | Tier | Price | Includes |
 |------|-------|----------|
-| **Basic** | $2,500 | Clean multi-page design, mobile responsive, basic animations, Netlify deploy |
+| **Basic** | $2,500 | Clean multi-page design, mobile responsive, CSS hover transitions, Netlify deploy |
 | **Pro** | $5,000 | + CSS scroll animations, video hero, testimonial carousel, Core Web Vitals optimized |
 | **Premium** | $10,000 | + AI video scroll sequences, advanced micro-interactions, full SEO + GEO, ongoing support |
 
@@ -1187,8 +1187,8 @@ SLOP DETECTOR — run mentally after building index.html
 
 7. SCROLL LIFE CHECK: Scroll top to bottom mentally.
    → If content is invisible → check opacity:1 on base CSS classes.
-   → MINIMUM: 3 scroll-triggered animations on homepage.
-     One in hero (load), one in middle (scroll), one near bottom.
+   → MINIMUM: 3 CSS transitions/hover effects visible on homepage.
+     One in hero (load fade-in via @keyframes), one in middle (card hovers), one near bottom (CTA hover).
 ```
 
 **Niche-Specific Design Overrides — Apply AFTER dice roll, BEFORE building:**
