@@ -245,6 +245,43 @@ curl -sL "$IMAGE_URL" -o "$BUILD_DIR/assets/stitch-preview.jpg"
 INDEX_SIZE=$(wc -c < "$BUILD_DIR/index.html")
 echo "✅ Stitch homepage: ${INDEX_SIZE} bytes"
 
+# ── Inject GitHub Pages redirect handler into index.html ─────────────────────
+echo "Injecting GitHub Pages redirect handler..."
+python3 << REDIRECT_INJECT_EOF
+import re
+
+with open("${BUILD_DIR}/index.html", "r") as f:
+    html = f.read()
+
+redirect_script = '''<script>
+  (function() {
+    var redirect = new URLSearchParams(window.location.search).get('p');
+    if (redirect) {
+      window.history.replaceState(null, null, redirect + window.location.hash);
+      if (redirect !== '/' && redirect !== '/index.html') {
+        var page = redirect.replace(/^\\//, '');
+        if (!page.endsWith('.html')) page += '.html';
+        fetch(page).then(function(r) {
+          if (r.ok) return r.text();
+          throw new Error('not found');
+        }).then(function(html) {
+          document.open();
+          document.write(html);
+          document.close();
+        }).catch(function() {});
+      }
+    }
+  })();
+</script>'''
+
+# Insert before </head>
+html = re.sub(r'</head>', redirect_script + '\n</head>', html, count=1)
+
+with open("${BUILD_DIR}/index.html", "w") as f:
+    f.write(html)
+print("✅ GitHub Pages redirect handler injected")
+REDIRECT_INJECT_EOF
+
 # ── Post-process: Inject real NAP data — Stitch invents placeholder names/phones ─
 # Stitch ignores real business data in the prompt and generates its own creative values.
 # We must find+replace all Stitch-invented data with the real scraped values.
@@ -385,49 +422,11 @@ PYFIX_EOF
 
 echo ""
 
-# ── Step 3: Generate hero + service images with Imagen 4 ──────────────────────
-if [ -n "$GEMINI_API_KEY" ]; then
-  echo "━━━ STEP 3: Generating images with Nano Banana ━━━"
-  python3 << PYTHON_EOF
-import urllib.request, json, base64, os
-
-GEMINI_API_KEY = "${GEMINI_API_KEY}"
-OUT_DIR = "${BUILD_DIR}/assets"
-
-def generate_image(prompt, filename):
-    payload = {
-        "instances": [{"prompt": prompt}],
-        "parameters": {"sampleCount": 1, "aspectRatio": "16:9"}
-    }
-    req = urllib.request.Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={GEMINI_API_KEY}",
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"}
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            d = json.load(resp)
-        with open(f"{OUT_DIR}/{filename}", 'wb') as f:
-            f.write(base64.b64decode(d['predictions'][0]['bytesBase64Encoded']))
-        print(f"✅ Generated: {filename}")
-    except Exception as e:
-        print(f"⚠️  Image gen failed for {filename}: {e}")
-
-generate_image(
-    f"Cinematic dark wide shot of professional ${NICHE} business in ${CITY}, dramatic studio lighting, high-end editorial photography, dark atmosphere",
-    "hero-main.jpg"
-)
-generate_image(
-    f"Editorial close-up of ${NICHE} work in progress, dark professional environment, dramatic side lighting",
-    "service-1.jpg"
-)
-generate_image(
-    f"Professional action shot of ${NICHE} service being performed, dark industrial aesthetic, cinematic",
-    "service-2.jpg"
-)
-PYTHON_EOF
-  echo ""
-fi
+# ── Step 3: Generate hero image with Gemini ─────────────────────────────────
+echo "━━━ STEP 3: Generating hero image with Gemini ━━━"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+python3 "$SCRIPT_DIR/gen-image.py" "$NICHE" "$CITY" "$BUILD_DIR/assets/hero-main.jpg" || echo "⚠️ Hero image gen failed — using placeholder"
+echo ""
 
 # ── Step 4: Generate multi-page site with bash heredocs ──────────────────────
 echo "━━━ STEP 4: Generating multi-page site ━━━"
@@ -535,8 +534,24 @@ cat > "$BUILD_DIR/contact.html" << CONTACT_EOF
 CONTACT_EOF
 echo "✅ contact.html"
 
-# Generate 404.html
-cp "$BUILD_DIR/index.html" "$BUILD_DIR/404.html"
+# Generate 404.html with GitHub Pages redirect script
+cat > "$BUILD_DIR/404.html" << NOTFOUND_EOF
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Redirecting...</title>
+<script>
+  var path = window.location.pathname;
+  var search = window.location.search;
+  var hash = window.location.hash;
+  var url = '/?p=' + encodeURIComponent(path) + (search ? '&' + search.slice(1) : '') + hash;
+  window.location.replace(url);
+</script>
+</head>
+<body></body>
+</html>
+NOTFOUND_EOF
 echo "✅ 404.html"
 
 # Generate sitemap.xml
@@ -561,6 +576,62 @@ echo "✅ robots.txt"
 
 echo ""
 echo "✅ Multi-page generation complete"
+echo ""
+
+# ── Step 4b: Inject random theme CSS into all HTML files ─────────────────────
+echo "━━━ STEP 4B: Injecting random design theme ━━━"
+python3 << THEME_INJECT_EOF
+import random, re
+
+# Pick random theme
+THEME_NUM = random.randint(0, 7)
+
+THEMES = {
+    0: {"primary": "#1a472a", "bg": "#f5f0e8", "accent": "#2d5a27", "font": "Georgia, serif", "name": "warm-professional"},
+    1: {"primary": "#0f4c81", "bg": "#ffffff", "accent": "#1a6bb5", "font": "system-ui, sans-serif", "name": "modern-clean"},
+    2: {"primary": "#5c3d2e", "bg": "#faf6f1", "accent": "#d4a96a", "font": "Georgia, serif", "name": "earth-tones"},
+    3: {"primary": "#006d6d", "bg": "#f0fafa", "accent": "#00a8a8", "font": "system-ui, sans-serif", "name": "fresh-teal"},
+    4: {"primary": "#8b1a1a", "bg": "#fff8f8", "accent": "#c0392b", "font": "Georgia, serif", "name": "warm-red"},
+    5: {"primary": "#2c3e50", "bg": "#f8f9fa", "accent": "#3498db", "font": "system-ui, sans-serif", "name": "slate-professional"},
+    6: {"primary": "#3d5a40", "bg": "#f4f7f4", "accent": "#7daa7d", "font": "Georgia, serif", "name": "sage-green"},
+    7: {"primary": "#1a2a4a", "bg": "#fffef8", "accent": "#c9a84c", "font": "system-ui, sans-serif", "name": "navy-gold"},
+}
+
+theme = THEMES[THEME_NUM]
+print(f"✅ Selected theme {THEME_NUM}: {theme['name']}")
+
+theme_css = f"""<style id="forge-theme">
+:root {{
+  --primary: {theme['primary']};
+  --bg: {theme['bg']};
+  --accent: {theme['accent']};
+  --text: #1a1a1a;
+  --header-font: {theme['font']};
+}}
+body {{ background: var(--bg) !important; color: var(--text) !important; }}
+header, nav, .header, .navbar {{ background: var(--primary) !important; }}
+h1, h2, h3, h4 {{ font-family: var(--header-font) !important; color: var(--primary) !important; }}
+.hero, [class*="hero"] {{ background: var(--primary) !important; }}
+.hero h1, .hero h2, [class*="hero"] h1, [class*="hero"] h2 {{ color: #fff !important; font-family: var(--header-font) !important; }}
+a {{ color: var(--accent) !important; }}
+button, .btn, [class*="btn"], input[type="submit"] {{ background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }}
+footer, .footer {{ background: var(--primary) !important; color: #fff !important; }}
+</style>"""
+
+for page in ["index.html", "about.html", "services.html", "contact.html"]:
+    path = f"${BUILD_DIR}/" + page
+    try:
+        with open(path, "r") as f:
+            html = f.read()
+        # Insert before </head>
+        html = re.sub(r'</head>', theme_css + '\n</head>', html, count=1)
+        with open(path, "w") as f:
+            f.write(html)
+        print(f"  ✅ {page} themed")
+    except Exception as e:
+        print(f"  ⚠️  {page} error: {e}")
+THEME_INJECT_EOF
+
 echo ""
 
 # ── Step 5: Completion gate ───────────────────────────────────────────────────
