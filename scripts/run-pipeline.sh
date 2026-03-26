@@ -11,6 +11,7 @@ NICHE="dentist"
 CITY="chicago"
 LIMIT=3
 SENDER_NAME="Alex"
+SKIP_EMAIL=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -18,6 +19,7 @@ while [[ $# -gt 0 ]]; do
     --city) CITY="$2"; shift 2 ;;
     --limit) LIMIT="$2"; shift 2 ;;
     --sender-name) SENDER_NAME="$2"; shift 2 ;;
+    --no-email) SKIP_EMAIL=true; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -170,7 +172,7 @@ print('')
       BIZ_EMAIL=$(grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' "$SCRAPE_DIR/content.md" | head -1 || echo "")
     fi
 
-    if [ -n "$BIZ_EMAIL" ]; then
+    if [ -n "$BIZ_EMAIL" ] && [ "$SKIP_EMAIL" = false ]; then
       EMAIL_OUTPUT=$("$SCRIPT_DIR/send-email.sh" \
         --to "$BIZ_EMAIL" \
         --url "$LIVE_URL" \
