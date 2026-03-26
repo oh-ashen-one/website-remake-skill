@@ -11,6 +11,9 @@ DOMAIN=""
 SCRAPE_DIR=""
 NICHE=""
 CITY=""
+OVERRIDE_BUSINESS_NAME=""
+OVERRIDE_PHONE=""
+OVERRIDE_ADDRESS=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -18,12 +21,15 @@ while [[ $# -gt 0 ]]; do
     --scrape-dir) SCRAPE_DIR="$2"; shift 2 ;;
     --niche) NICHE="$2"; shift 2 ;;
     --city) CITY="$2"; shift 2 ;;
+    --business-name) OVERRIDE_BUSINESS_NAME="$2"; shift 2 ;;
+    --phone) OVERRIDE_PHONE="$2"; shift 2 ;;
+    --address) OVERRIDE_ADDRESS="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 if [ -z "$DOMAIN" ] || [ -z "$SCRAPE_DIR" ] || [ -z "$NICHE" ] || [ -z "$CITY" ]; then
-  echo "❌ Usage: ./build-site.sh --domain 'brightsmile.com' --scrape-dir '/path' --niche 'dentist' --city 'chicago'"
+  echo "❌ Usage: ./build-site.sh --domain 'brightsmile.com' --scrape-dir '/path' --niche 'dentist' --city 'chicago' [--business-name 'Name'] [--phone '(555) 000-0000'] [--address '123 Main St']"
   exit 1
 fi
 
@@ -84,6 +90,11 @@ print('')
 [ -z "$BUSINESS_NAME" ] && BUSINESS_NAME=$(echo "$DOMAIN" | sed 's/\.[^.]*$//' | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1')
 PHONE=$(grep -oE '\(?\b[0-9]{3}\)?[-. ][0-9]{3}[-. ][0-9]{4}\b' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
 ADDRESS=$(grep -oE '[0-9]+\s+[NSEW]?\s*[A-Za-z]+(?:\s+[A-Za-z]+)?\s+(Ave|St|Blvd|Dr|Rd|Ln|Way|Ct|Pl|Pkwy)\.?' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
+
+# Apply overrides from caller (run-pipeline.sh passes pre-extracted values — these win)
+[ -n "$OVERRIDE_BUSINESS_NAME" ] && BUSINESS_NAME="$OVERRIDE_BUSINESS_NAME"
+[ -n "$OVERRIDE_PHONE" ] && PHONE="$OVERRIDE_PHONE"
+[ -n "$OVERRIDE_ADDRESS" ] && ADDRESS="$OVERRIDE_ADDRESS"
 
 echo "Business: $BUSINESS_NAME | Phone: $PHONE | Niche: $NICHE | City: $CITY"
 

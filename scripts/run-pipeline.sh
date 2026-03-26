@@ -107,6 +107,32 @@ for URL in "${URLS[@]}"; do
   }
   echo ""
 
+  # ── Step 2b: Extract NAP from scraped content (pass explicitly to build-site.sh) ──
+  NAP_BUSINESS_NAME=$(python3 -c "
+import re, sys
+try:
+    content = open('$SCRAPE_DIR/content.md').read()
+    lines = [l.strip() for l in content.splitlines() if l.strip()]
+    for line in lines[:10]:
+        # Last segment after | separator (Firecrawl puts full page title on line 1)
+        if '|' in line:
+            name = line.split('|')[-1].strip()
+            name = re.sub(r'^#+\s*', '', name)
+            if 3 < len(name) < 80 and not name.startswith('http'):
+                print(name); sys.exit(0)
+        # First heading
+        m = re.match(r'^#+\s+(.+)', line)
+        if m:
+            name = re.split(r'\s*[\|\-–—]\s*', m.group(1).strip())[0].strip()
+            if 3 < len(name) < 80:
+                print(name); sys.exit(0)
+except: pass
+print('')
+" 2>/dev/null)
+  NAP_PHONE=$(grep -oE '\(?\b[0-9]{3}\)?[-. ][0-9]{3}[-. ][0-9]{4}\b' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
+  NAP_ADDRESS=$(grep -oE '[0-9]+\s+[NSEW]?\s*[A-Za-z]+(?:\s+[A-Za-z]+)?\s+(Ave|St|Blvd|Dr|Rd|Ln|Way|Ct|Pl|Pkwy)\.?' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
+  echo "📋 NAP extracted — Name: ${NAP_BUSINESS_NAME:-"(fallback)"} | Phone: ${NAP_PHONE:-"not found"} | Address: ${NAP_ADDRESS:-"not found"}"
+
   # ── Step 3: Build ───────────────────────────────────────────────────────────
   echo "━━━ STEP 3: Building site for $DOMAIN ━━━"
   LIVE_URL=""
@@ -115,7 +141,10 @@ for URL in "${URLS[@]}"; do
     --domain "$DOMAIN" \
     --scrape-dir "$SCRAPE_DIR" \
     --niche "$NICHE" \
-    --city "$CITY" 2>&1) || {
+    --city "$CITY" \
+    ${NAP_BUSINESS_NAME:+--business-name "$NAP_BUSINESS_NAME"} \
+    ${NAP_PHONE:+--phone "$NAP_PHONE"} \
+    ${NAP_ADDRESS:+--address "$NAP_ADDRESS"} 2>&1) || {
     echo "❌ Build failed for $DOMAIN"
     echo "$BUILD_OUTPUT" | tail -20
     BUILD_OK=false
