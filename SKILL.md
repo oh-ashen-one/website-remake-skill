@@ -1,6 +1,6 @@
 ---
 name: website-remake
-description: Autonomous pipeline — find businesses with outdated websites, rebuild to $10K quality using Google Stitch for UI generation (multi-page architecture, GSAP scroll effects, AI hero images), deploy demos to GitHub Pages, log to Notion, send cold outreach. Netlify for production handoff only. Runs end-to-end without human intervention.
+description: Autonomous pipeline — find businesses with outdated websites, rebuild to $10K quality using Google Stitch for UI generation (multi-page architecture, no JS animations, content always visible, AI hero images), deploy demos to GitHub Pages, log to Notion, send cold outreach. Netlify for production handoff only. Runs end-to-end without human intervention.
 tags:
   - business-development
   - web-design
@@ -34,7 +34,7 @@ metadata:
 7. **NEVER use Vercel or Wix.** Deploy demos to GitHub Pages (free). Netlify is for production handoff after client payment only.
 8. **DISCORD: WRAP ALL URLS IN `<angle brackets>`.** Always post links as `<https://example.com>` — never bare URLs. Bare URLs generate large link previews that pollute #announcements.
 9. **DISCORD: ONE MESSAGE, SILENT RUN.** No narration during the run. No "spawning", "yielding", "pipeline running" messages. Post one clean components card to #announcements only when all builds are done.
-10. **GSAP: NEVER `gsap.from()` WITH `opacity:0` WITHOUT CSS FALLBACK.** If ScrollTrigger fails on mobile (iOS Safari), elements stay permanently invisible — entire sections appear blank. ALWAYS add `opacity:1!important;transform:none!important` for all animated elements in a `@media(max-width:767px)` rule. Use `gsap.fromTo()` not `gsap.from()`. Call `ScrollTrigger.refresh()` on `window.load`. See GSAP Patterns section.
+10. **NO GSAP. EVER.** Do not include GSAP CDN links, ScrollTrigger, `gsap.from()`, `gsap.fromTo()`, or any GSAP import in any generated HTML or JS. GSAP causes blank pages when the CDN is slow or blocked — content set to `opacity:0` never becomes visible. All base CSS classes (`hero`, `.service-card`, `.stat-item`, `.testimonial-card`, etc.) must have `opacity: 1` by default. CSS transitions only for hover effects. If the Stitch prompt generates GSAP references, strip them in post-processing. Vanilla JS for mobile nav only.
 11. **HERO HEIGHT: NEVER `min-height:100dvh` ALONE.** Always use: `min-height:600px; min-height:100svh; min-height:100dvh;` — the svh fallback prevents iOS browser chrome from adding a gap below the hero.
 12. **NEVER GUESS AN EMAIL ADDRESS.** `info@domain.com`, `hello@domain.com`, `contact@domain.com` — all banned unless confirmed on the actual site. If no email on the homepage, run the full 6-step email discovery sequence (Yelp → BBB → Facebook → contact subpage → Google) before giving up. A guessed email that bounces is worse than no email. See Step 2 failure handling. **ZERO Discord messages until Step 10.** Not one. The only `message` tool call in the entire pipeline is the final card post.
 10. **VIEWPORT HEIGHT: SVH BEFORE DVH.** Never write `min-height: 100dvh` alone. Always pair: `min-height: 100svh; min-height: 100dvh;` — svh first (stable fallback), dvh second (progressive enhancement). `100dvh` alone causes hero sections to resize/jump on mobile Safari as the URL bar shows/hides. This rule applies to all viewport-height declarations in heroes, modals, and full-screen sections.
@@ -257,7 +257,8 @@ DESIGN RULES:
 - No emojis anywhere on the page
 - No purple, violet, lavender, or indigo
 - Mobile-first responsive layout
-- GSAP scroll animations (fade-up on scroll)
+- No JavaScript animation libraries. No GSAP. No ScrollTrigger. CSS transitions only.
+- All content visible without JavaScript — opacity must be 1 on all elements by default
 - Color system: ${colorSystem}
 
 REAL BUSINESS DATA (use verbatim, do not invent):
@@ -276,7 +277,7 @@ REQUIRED SECTIONS:
 6. Contact section — address, phone, email, map placeholder
 7. Footer — all nav links, phone, address, copyright
 
-OUTPUT: Clean semantic HTML + embedded CSS. No external dependencies except GSAP CDN. No framework boilerplate.
+OUTPUT: Clean semantic HTML with embedded style and script tags. No GSAP. No external JS dependencies. Vanilla JS only. All content visible without JavaScript — opacity must be 1 on all elements by default. No framework. Production-ready.
 `.trim();
 }
 ```
@@ -285,6 +286,23 @@ OUTPUT: Clean semantic HTML + embedded CSS. No external dependencies except GSAP
 - Save the HTML to `/tmp/rebuild/[slug]/index.html`
 - Save the screenshot to `/tmp/rebuild/[slug]/assets/stitch-preview.jpg`
 - The Stitch HTML is the homepage. Claude Code expands it in Step 5.
+
+**NAP POST-PROCESSOR — runs immediately after Stitch download (before Step 5):**
+Stitch invents placeholder business names, phone numbers, and addresses — it does NOT reliably use the real data from the prompt. A post-processor must run on the raw HTML before anything else:
+1. Strip all GSAP `<script>` CDN tags and replace with vanilla mobile-nav-only JS
+2. Set `opacity: 1` on all base CSS classes (`.hero`, `.service-card`, `.stat-item`, `.testimonial-card`, `.faq-item`, `.reveal`, etc.)
+3. Extract Stitch's invented business name from the HTML `<title>` tag
+4. Replace all occurrences of the invented name with the real `BUSINESS_NAME` (case-insensitive)
+5. Find all US phone patterns in HTML — replace any that don't match the real phone with the real phone
+6. Update all `tel:` href links to match the real phone digits
+7. Replace Stitch's invented address with the real `ADDRESS` if found
+
+**Business name extraction from Firecrawl markdown:**
+- Firecrawl outputs the page title on line 1, formatted as: `Business Name | Tagline | Site Name`
+- Extract the **last `|` segment** — that's usually the business name (or the first segment if only one exists)
+- Strip leading `#` heading markers, trim whitespace
+- Reject strings < 4 chars or > 80 chars, or starting with `http`
+- Fallback: first H1 heading, then domain slug capitalized
 
 **STITCH FAILURE HANDLING — MANDATORY:**
 - **API error / timeout:** Retry once after 10 seconds. If second attempt fails → fall back to Claude Code writing the homepage HTML directly using the design system dice rolls and niche vibe rules. Log: "Stitch unavailable — homepage written by Claude Code."
