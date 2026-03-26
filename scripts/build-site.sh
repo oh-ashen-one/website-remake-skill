@@ -51,19 +51,32 @@ BUSINESS_NAME=$(python3 -c "
 import re, sys
 try:
     content = open('$SCRAPE_DIR/content.md').read()
-    # Try: title tag content captured as markdown heading or title line
+    lines = [l.strip() for l in content.splitlines() if l.strip()]
+
+    # Strategy 1: First non-heading line is usually the <title> text from Firecrawl
+    # e.g. 'Best Dentist In Nashville | Dentistry Of Nashville'
+    # Take the LAST segment after | or – (that's usually the business name)
+    for line in lines[:3]:
+        if not line.startswith('#') and not line.startswith('http') and '|' in line:
+            parts = re.split(r'\s*[\|]\s*', line)
+            # Last segment tends to be the proper business name
+            name = parts[-1].strip()
+            if 3 < len(name) < 80:
+                print(name); sys.exit(0)
+
+    # Strategy 2: First non-heading line with no | — treat as title, clean it
+    for line in lines[:3]:
+        if not line.startswith('#') and not line.startswith('http') and 3 < len(line) < 80:
+            name = re.split(r'\s*[\|\-–—]\s*', line)[0].strip()
+            if 3 < len(name) < 80:
+                print(name); sys.exit(0)
+
+    # Strategy 3: First H1 heading — clean tagline/city suffix
     m = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
     if m:
-        name = m.group(1).strip()
-        # Clean common suffixes: ' | City', ' - Tagline', ' — City'
-        name = re.split(r'\s*[\|\-–—]\s*', name)[0].strip()
+        name = re.split(r'\s*[\|\-–—]\s*', m.group(1).strip())[0].strip()
         if 3 < len(name) < 80:
             print(name); sys.exit(0)
-    # Fallback: second line of file if it looks like a business name
-    lines = [l.strip() for l in content.splitlines() if l.strip()]
-    for line in lines[:5]:
-        if 3 < len(line) < 80 and not line.startswith('http') and not line.startswith('#'):
-            print(line); sys.exit(0)
 except: pass
 print('')
 " 2>/dev/null)
