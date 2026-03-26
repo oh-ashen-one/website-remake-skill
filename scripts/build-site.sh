@@ -244,56 +244,145 @@ PYTHON_EOF
   echo ""
 fi
 
-# ── Step 4: Claude Code expands to multi-page ─────────────────────────────────
-echo "━━━ STEP 4: Expanding to multi-page with Claude Code ━━━"
+# ── Step 4: Generate multi-page site with bash heredocs ──────────────────────
+echo "━━━ STEP 4: Generating multi-page site ━━━"
 
-DESIGN_NOTES=""
-if [ -f "/tmp/stitch-design-$SLUG.md" ]; then
-  DESIGN_NOTES="STITCH DESIGN SYSTEM (extracted from generated homepage — maintain consistency):\n$(head -30 /tmp/stitch-design-$SLUG.md)"
-fi
+# Extract CSS/theme from index.html for reuse
+HEAD_CSS=$(sed -n '/<style/,/<\/style>/p' "$BUILD_DIR/index.html" | head -200)
+NAV_HTML=$(sed -n '/<nav/,/<\/nav>/p' "$BUILD_DIR/index.html" | head -30)
+FOOTER_HTML=$(sed -n '/<footer/,/<\/footer>/p' "$BUILD_DIR/index.html" | head -30)
 
-CLAUDE_PROMPT="You have a Stitch-generated homepage at index.html. Expand this into a full multi-page website.
+# Generate about.html
+cat > "$BUILD_DIR/about.html" << ABOUT_EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About ${BUSINESS_NAME} — ${NICHE} in ${CITY}</title>
+  <meta name="description" content="Learn about ${BUSINESS_NAME}, a trusted ${NICHE} serving ${CITY} and surrounding areas.">
+  <link rel="canonical" href="https://oh-ashen-one.github.io/${SLUG}/about.html">
+  ${HEAD_CSS}
+</head>
+<body style="background:#131313;color:#e0e0e0;font-family:system-ui,sans-serif;margin:0;">
+  ${NAV_HTML}
+  <main style="max-width:900px;margin:0 auto;padding:80px 20px;">
+    <h1 style="font-size:2.5rem;margin-bottom:1rem;">About ${BUSINESS_NAME}</h1>
+    <p>Proudly serving ${CITY} and the surrounding community, ${BUSINESS_NAME} has built a reputation for reliable, high-quality ${NICHE} services.</p>
+    <h2>Why Choose Us</h2>
+    <ul>
+      <li>Experienced, licensed professionals</li>
+      <li>Transparent pricing with no hidden fees</li>
+      <li>Committed to customer satisfaction</li>
+      <li>Serving the ${CITY} area</li>
+    </ul>
+    <p><a href="contact.html" style="color:#4ecdc4;">Contact us today</a> | <a href="index.html" style="color:#4ecdc4;">Back to Home</a> | <a href="services.html" style="color:#4ecdc4;">Our Services</a></p>
+  </main>
+  ${FOOTER_HTML}
+</body>
+</html>
+ABOUT_EOF
+echo "✅ about.html"
 
-BUSINESS: ${BUSINESS_NAME} | NICHE: ${NICHE} | CITY: ${CITY}
-SCRAPED CONTENT:
-${SCRAPED_CONTENT}
+# Generate services.html
+cat > "$BUILD_DIR/services.html" << SERVICES_EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${BUSINESS_NAME} Services — ${NICHE} in ${CITY}</title>
+  <meta name="description" content="Professional ${NICHE} services offered by ${BUSINESS_NAME} in ${CITY}.">
+  <link rel="canonical" href="https://oh-ashen-one.github.io/${SLUG}/services.html">
+  ${HEAD_CSS}
+</head>
+<body style="background:#131313;color:#e0e0e0;font-family:system-ui,sans-serif;margin:0;">
+  ${NAV_HTML}
+  <main style="max-width:900px;margin:0 auto;padding:80px 20px;">
+    <h1 style="font-size:2.5rem;margin-bottom:1rem;">Our Services</h1>
+    <p>${BUSINESS_NAME} offers a full range of professional ${NICHE} services in ${CITY}.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:32px;">
+      <div style="background:#1a1a1a;padding:24px;border-radius:12px;"><h3>General ${NICHE} Services</h3><p>Comprehensive solutions for residential and commercial clients.</p></div>
+      <div style="background:#1a1a1a;padding:24px;border-radius:12px;"><h3>Emergency Services</h3><p>Fast response when you need us most. Available for urgent calls.</p></div>
+      <div style="background:#1a1a1a;padding:24px;border-radius:12px;"><h3>Consultation</h3><p>Free estimates and professional advice for your project.</p></div>
+    </div>
+    <p style="margin-top:32px;"><a href="contact.html" style="color:#4ecdc4;">Get a Free Quote</a> | <a href="about.html" style="color:#4ecdc4;">About Us</a> | <a href="index.html" style="color:#4ecdc4;">Home</a></p>
+  </main>
+  ${FOOTER_HTML}
+</body>
+</html>
+SERVICES_EOF
+echo "✅ services.html"
 
-${DESIGN_NOTES}
+# Generate contact.html
+cat > "$BUILD_DIR/contact.html" << CONTACT_EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact ${BUSINESS_NAME} — ${NICHE} in ${CITY}</title>
+  <meta name="description" content="Contact ${BUSINESS_NAME} for ${NICHE} services in ${CITY}. Call us or send a message.">
+  <link rel="canonical" href="https://oh-ashen-one.github.io/${SLUG}/contact.html">
+  ${HEAD_CSS}
+</head>
+<body style="background:#131313;color:#e0e0e0;font-family:system-ui,sans-serif;margin:0;">
+  ${NAV_HTML}
+  <main style="max-width:900px;margin:0 auto;padding:80px 20px;">
+    <h1 style="font-size:2.5rem;margin-bottom:1rem;">Contact Us</h1>
+    <p>Ready to get started? Reach out to ${BUSINESS_NAME} today.</p>
+    <div style="margin:32px 0;">
+      ${PHONE:+<p><strong>Phone:</strong> <a href="tel:${PHONE}" style="color:#4ecdc4;">${PHONE}</a></p>}
+      ${ADDRESS:+<p><strong>Address:</strong> ${ADDRESS}</p>}
+      <p><strong>Serving:</strong> ${CITY} and surrounding areas</p>
+    </div>
+    <form style="max-width:500px;">
+      <input type="text" placeholder="Your Name" style="width:100%;padding:12px;margin-bottom:12px;background:#1a1a1a;border:1px solid #333;color:#e0e0e0;border-radius:8px;font-size:1rem;">
+      <input type="email" placeholder="Your Email" style="width:100%;padding:12px;margin-bottom:12px;background:#1a1a1a;border:1px solid #333;color:#e0e0e0;border-radius:8px;font-size:1rem;">
+      <textarea placeholder="How can we help?" rows="5" style="width:100%;padding:12px;margin-bottom:12px;background:#1a1a1a;border:1px solid #333;color:#e0e0e0;border-radius:8px;font-size:1rem;resize:vertical;"></textarea>
+      <button type="submit" style="background:#4ecdc4;color:#131313;padding:14px 32px;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:bold;">Send Message</button>
+    </form>
+    <p style="margin-top:32px;"><a href="index.html" style="color:#4ecdc4;">Home</a> | <a href="services.html" style="color:#4ecdc4;">Services</a> | <a href="about.html" style="color:#4ecdc4;">About</a></p>
+  </main>
+  ${FOOTER_HTML}
+</body>
+</html>
+CONTACT_EOF
+echo "✅ contact.html"
 
-YOUR TASK — build these files, using the same design language as index.html:
-1. about.html — Business story, credentials, team, years in business, E-E-A-T signals
-2. contact.html — Full address, phone, Google Maps embed, contact form with floating labels
-3. faq.html — 10 real niche-appropriate questions with FAQPage JSON-LD schema
-4. services/ directory — One .html per major service (minimum 3), each 300+ words
-5. sitemap.xml — All pages listed
-6. robots.txt — Points to sitemap
+# Generate 404.html
+cp "$BUILD_DIR/index.html" "$BUILD_DIR/404.html"
+echo "✅ 404.html"
 
-RULES FOR EXPANSION:
-- Read index.html FIRST. Match its exact color scheme, font choices, nav structure, footer.
-- Every new page: same nav, same footer, unique <title> + <meta description>, canonical tag
-- JSON-LD LocalBusiness schema on every page
-- Mobile-first CSS. Touch targets ≥ 44px. Hamburger nav at 768px.
-- GSAP animations on every page (reuse the same CDN imports from index.html)
-- No emojis. No purple. No white backgrounds.
-- Internal linking: every page links to ≥3 others.
+# Generate sitemap.xml
+cat > "$BUILD_DIR/sitemap.xml" << SITEMAP_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://oh-ashen-one.github.io/${SLUG}/</loc></url>
+  <url><loc>https://oh-ashen-one.github.io/${SLUG}/about.html</loc></url>
+  <url><loc>https://oh-ashen-one.github.io/${SLUG}/services.html</loc></url>
+  <url><loc>https://oh-ashen-one.github.io/${SLUG}/contact.html</loc></url>
+</urlset>
+SITEMAP_EOF
+echo "✅ sitemap.xml"
 
-After building all files, run this completion check:
-- ls -la (verify all required files exist)
-- grep -c '<title>' *.html (every file must have a title)
+# Generate robots.txt
+cat > "$BUILD_DIR/robots.txt" << ROBOTS_EOF
+User-agent: *
+Allow: /
+Sitemap: https://oh-ashen-one.github.io/${SLUG}/sitemap.xml
+ROBOTS_EOF
+echo "✅ robots.txt"
 
-This is a demo for cold outreach — it must look like a \$10K professional site."
-
-cd "$BUILD_DIR"
-claude --permission-mode bypassPermissions --print "$CLAUDE_PROMPT"
 echo ""
-echo "✅ Multi-page expansion complete"
+echo "✅ Multi-page generation complete"
 echo ""
 
 # ── Step 5: Completion gate ───────────────────────────────────────────────────
 echo "━━━ STEP 5: Completion Gate ━━━"
 PASS=true
 
-for f in index.html about.html contact.html faq.html sitemap.xml robots.txt; do
+for f in index.html about.html contact.html 404.html sitemap.xml robots.txt; do
   if [ -f "$BUILD_DIR/$f" ]; then
     echo "✅ $f"
   else
@@ -302,16 +391,16 @@ for f in index.html about.html contact.html faq.html sitemap.xml robots.txt; do
   fi
 done
 
-SERVICE_COUNT=$(find "$BUILD_DIR" -name "*.html" -path "*/services/*" 2>/dev/null | wc -l | tr -d ' ')
-if [ "$SERVICE_COUNT" -ge 2 ]; then
-  echo "✅ $SERVICE_COUNT service pages"
+if [ -f "$BUILD_DIR/services.html" ]; then
+  echo "✅ services.html"
 else
-  echo "❌ Only $SERVICE_COUNT service pages (need ≥2)"
+  echo "❌ MISSING: services.html"
   PASS=false
 fi
 
 if [ "$PASS" = false ]; then
-  echo "⚠️  Completion gate failed — continuing anyway (demo deploy)"
+  echo "❌ Completion gate failed — aborting build."
+  exit 1
 fi
 echo ""
 

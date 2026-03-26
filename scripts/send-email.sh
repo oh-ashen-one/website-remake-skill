@@ -13,86 +13,69 @@ if [ -f "$SECRETS_DIR/agentmail-api-key.txt" ]; then
 fi
 
 TO=""
-SUBJECT=""
 URL=""
 BUSINESS_NAME=""
-SENDER_NAME="${SENDER_NAME:-}"  # can be set via env var SENDER_NAME
+SPECIFIC_PROBLEMS=""
+FIRST_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --to) TO="$2"; shift 2 ;;
-    --subject) SUBJECT="$2"; shift 2 ;;
     --url) URL="$2"; shift 2 ;;
     --business-name) BUSINESS_NAME="$2"; shift 2 ;;
-    --sender-name) SENDER_NAME="$2"; shift 2 ;;
+    --problems) SPECIFIC_PROBLEMS="$2"; shift 2 ;;
+    --first-name) FIRST_NAME="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
 if [ -z "$TO" ] || [ -z "$URL" ]; then
-  echo "❌ Usage: ./send-email.sh --to owner@example.com --url https://preview.netlify.app --business-name 'Joe Plumbing' --sender-name 'Alex'"
-  echo "   Or set SENDER_NAME env var for default."
+  echo "❌ Usage: ./send-email.sh --to owner@example.com --url https://demo.github.io/slug --business-name 'Joe Plumbing' --problems 'site not mobile friendly'"
   exit 1
 fi
-
-# Resolve sender name: --sender-name flag > SENDER_NAME env > fallback
-SENDER_NAME="${SENDER_NAME:-${AGENT_SENDER_NAME:-Your Name}}"
 
 if [ -z "$AGENTMAIL_API_KEY" ]; then
   echo "❌ AGENTMAIL_API_KEY not found in $SECRETS_DIR/agentmail-api-key.txt"
   exit 1
 fi
 
+# Hardcoded inbox — never dynamically select
+FROM_EMAIL="forgeaiseo@agentmail.to"
+
 BUSINESS_NAME="${BUSINESS_NAME:-your business}"
-SUBJECT="${SUBJECT:-I rebuilt your website — here's the link}"
+FIRST_NAME="${FIRST_NAME:-there}"
+SPECIFIC_PROBLEMS="${SPECIFIC_PROBLEMS:-it doesn't load properly on mobile and your phone number isn't visible above the fold}"
+SUBJECT="${BUSINESS_NAME} — we rebuilt your entire website"
 
-# Get the AgentMail inbox to send from
-INBOX_RESPONSE=$(curl -s -X GET "https://api.agentmail.to/v0/inboxes" \
-  -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
-  -H "Content-Type: application/json")
-
-FROM_EMAIL=$(echo "$INBOX_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['items'][0]['address'])" 2>/dev/null || echo "")
-
-if [ -z "$FROM_EMAIL" ]; then
-  echo "❌ Could not fetch AgentMail inbox. Check API key."
-  echo "Response: $INBOX_RESPONSE"
-  exit 1
-fi
-
-echo "📧 Sending from: $FROM_EMAIL"
+echo "📧 Sending from: $FROM_EMAIL (Alison | Teza)"
 echo "📧 Sending to: $TO"
 echo "📎 Preview URL: $URL"
 echo ""
 
-# Build email body
-EMAIL_BODY="Hi there,
+# Build email body — Alison | Teza template from SKILL.md
+EMAIL_BODY="Hi ${FIRST_NAME},
 
-I spent the last couple of hours rebuilding your website. Here's the live preview:
+My name is Alison, from Teza. We help small businesses rebuild their digital footprint using AI — new websites, SEO, the works.
 
-$URL
+We rebuilt your entire website because we noticed a few problems with your current one: ${SPECIFIC_PROBLEMS}. These kinds of issues are quietly costing you customers every week.
 
-What I changed:
-- Modern hero with animated background
-- Smooth scroll effects on every section
-- Mobile-optimized layout (your current site has issues on mobile)
-- Professional testimonials section
-- Clear call-to-action buttons
+Take a look at what we built:
+${URL}
 
-This isn't a mockup — it's fully functional, hosted live, and ready to go.
+Completely free to browse — no credit card, no catch.
 
-If you like the direction, I'd love to talk about moving this to your domain.
+If you like it, we'd love to sell it to you. We can have the whole thing running on your own domain within 24 hours. If it's not for you, no pressure at all — just let us know.
 
-Best,
-$SENDER_NAME
+— Alison
+Teza"
 
-P.S. Most agencies charge \$5K–\$15K and take 3+ weeks. This is production-ready in days."
-
-# Send via AgentMail
-SEND_RESPONSE=$(curl -s -X POST "https://api.agentmail.to/v0/inboxes/$FROM_EMAIL/messages" \
+# Send via AgentMail — hardcoded endpoint
+SEND_RESPONSE=$(curl -s -X POST "https://api.agentmail.to/v0/inboxes/forgeaiseo@agentmail.to/messages/send" \
   -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
   -H "Content-Type: application/json" \
   -d "{
     \"to\": [\"$TO\"],
+    \"from_display_name\": \"Alison | Teza\",
     \"subject\": \"$SUBJECT\",
     \"text\": $(echo "$EMAIL_BODY" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
   }")

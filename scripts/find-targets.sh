@@ -39,7 +39,7 @@ ALL_URLS=()
 for QUERY in "${QUERIES[@]}"; do
   echo "  → Query: $QUERY"
 
-  RESPONSE=$(curl -s "https://api.search.brave.com/res/v1/web/search?q=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('$QUERY'))")&count=10&country=us" \
+  RESPONSE=$(curl -s --compressed "https://api.search.brave.com/res/v1/web/search?q=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('$QUERY'))")&count=10&country=us" \
     -H "Accept: application/json" \
     -H "Accept-Encoding: gzip" \
     -H "X-Subscription-Token: $BRAVE_API_KEY")
@@ -85,9 +85,9 @@ echo "|---|----------|-----|-------|"
 for entry in "${ALL_URLS[@]}"; do
   [ $ANALYZED -ge $LIMIT ] && break
 
-  URL=$(echo "$entry" | cut -d'|||' -f1)
-  TITLE=$(echo "$entry" | cut -d'|||' -f2)
-  DESC=$(echo "$entry" | cut -d'|||' -f3)
+  URL=$(echo "$entry" | awk -F'[|][|][|]' '{print $1}')
+  TITLE=$(echo "$entry" | awk -F'[|][|][|]' '{print $2}')
+  DESC=$(echo "$entry" | awk -F'[|][|][|]' '{print $3}')
 
   ANALYZED=$((ANALYZED + 1))
   echo "| $ANALYZED | $TITLE | $URL | $DESC |"
