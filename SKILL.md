@@ -1779,18 +1779,14 @@ SCORE: ___/12
 
 **Automated quality checks — add to Completion Gate bash script:**
 ```bash
-# GSAP on every page
+# No GSAP anywhere (hard rule)
 for f in $(find "$BUILD_DIR" -name "*.html"); do
-  grep -q "gsap.min.js" "$f" || { echo "FAIL: $f missing GSAP"; PASS=false; }
-  grep -q "ScrollTrigger.min.js" "$f" || { echo "FAIL: $f missing ScrollTrigger"; PASS=false; }
+  grep -q "gsap.min.js\|ScrollTrigger.min.js" "$f" && { echo "FAIL: $f contains GSAP CDN — Hard Rule #10 violation"; PASS=false; }
+  grep -q "opacity: 0\|opacity:0" "$f" && echo "WARN: $f may have opacity:0 — verify base classes are opacity:1"
 done
-# registerPlugin in main.js
-[ -f "$BUILD_DIR/js/main.js" ] && ! grep -q "registerPlugin" "$BUILD_DIR/js/main.js" && { echo "FAIL: missing registerPlugin"; PASS=false; }
+[ -f "$BUILD_DIR/js/main.js" ] && grep -q "gsap\|ScrollTrigger\|registerPlugin" "$BUILD_DIR/js/main.js" && { echo "FAIL: main.js references GSAP — remove it"; PASS=false; }
 # Die 6 comment in index.html
 grep -q "Die 6" "$BUILD_DIR/index.html" || { echo "FAIL: missing design roll comment"; PASS=false; }
-# At least 3 ScrollTrigger usages
-SCROLL_COUNT=$(grep -c "scrollTrigger\|ScrollTrigger" "$BUILD_DIR/js/main.js" 2>/dev/null || echo 0)
-[ "$SCROLL_COUNT" -lt 3 ] && echo "WARN: Only $SCROLL_COUNT scroll triggers (want ≥3)"
 # nav + footer on every page
 for f in $(find "$BUILD_DIR" -name "*.html"); do
   grep -q "<nav" "$f" || { echo "FAIL: $f missing <nav>"; PASS=false; }
