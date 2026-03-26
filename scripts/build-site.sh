@@ -386,6 +386,8 @@ print("✅ GSAP stripped — content always visible")
 PYFIX_EOF
 
 # ── Fix nav links to use .html extensions (GitHub Pages serves real files) ────
+# Stitch generates href="#", href="/about", href="about" — all broken on GitHub Pages.
+# We fix all patterns: #, /about, about → about.html (by matching visible link text)
 echo "Fixing nav links to use .html extensions..."
 python3 << FIX_NAV_EOF
 import re
@@ -393,18 +395,38 @@ import re
 with open("${BUILD_DIR}/index.html", "r") as f:
     html = f.read()
 
-# Fix href="/about" → href="about.html", href="/services" → href="services.html", etc.
-# Also fix href="about" → href="about.html" (no leading slash)
+# Strategy 1: Fix explicit path hrefs: /about → about.html, /services → services.html
 pages = ['about', 'services', 'contact']
 for page in pages:
-    # Fix absolute paths: /about, /about/
     html = re.sub(r'href=["\']/' + page + r'/?["\']', f'href="{page}.html"', html)
-    # Fix bare paths: "about", 'about' (exact match, not part of longer word)
     html = re.sub(r'href=["\']' + page + r'["\']', f'href="{page}.html"', html)
 
+# Strategy 2: Fix href="#" by matching visible anchor text (Stitch's most common pattern)
+# <a class="..." href="#">About</a> → <a class="..." href="about.html">About</a>
+text_to_page = {
+    'about': 'about.html',
+    'services': 'services.html',
+    'our services': 'services.html',
+    'contact': 'contact.html',
+    'contact us': 'contact.html',
+}
+
+def fix_hash_link(m):
+    full = m.group(0)
+    # Extract visible text (strip inner tags)
+    inner = re.sub(r'<[^>]+>', '', full).strip().lower()
+    for key, target in text_to_page.items():
+        if inner == key or inner.startswith(key):
+            return full.replace('href="#"', f'href="{target}"')
+    return full
+
+html = re.sub(r'<a\b[^>]*href="#"[^>]*>.*?</a>', fix_hash_link, html, flags=re.DOTALL|re.IGNORECASE)
+
+# Report what was fixed
+fixed = re.findall(r'href="(about\.html|services\.html|contact\.html)"', html)
 with open("${BUILD_DIR}/index.html", "w") as f:
     f.write(html)
-print("✅ Nav links fixed to use .html extensions")
+print(f"✅ Nav links fixed: {fixed}")
 FIX_NAV_EOF
 
 echo ""
