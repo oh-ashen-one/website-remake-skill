@@ -86,7 +86,7 @@ for URL in "${URLS[@]}"; do
   COUNT=$((COUNT + 1))
   [ $COUNT -gt $LIMIT ] && break
 
-  DOMAIN=$(echo "$URL" | sed 's/https\?:\/\///g' | cut -d/ -f1)
+  DOMAIN=$(echo "$URL" | sed 's|https://||;s|http://||' | cut -d/ -f1)
   SLUG=$(echo "$DOMAIN" | tr '.' '_')
   SCRAPE_DIR="/tmp/website-remake-targets/$SLUG"
 

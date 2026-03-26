@@ -139,7 +139,7 @@ REQUIRED SECTIONS (in this order):
 6. Contact — address, phone, map placeholder, simple contact form
 7. Footer — nav links, phone, copyright
 
-OUTPUT: Clean semantic HTML with embedded \`<style>\` and \`<script>\` tags. GSAP from CDN. No framework. Production-ready.
+OUTPUT: Clean semantic HTML with embedded style and script tags. No GSAP. No external JS dependencies. Vanilla JS only. All content visible without JavaScript — opacity must be 1 on all elements by default. No framework. Production-ready.
 \`.trim();
 
 // Generate screen
