@@ -359,7 +359,7 @@ After generating, swap the placeholder images in the Stitch HTML with these real
 ### Step 5: Expand to Multi-Page Architecture
 Claude Code takes the Stitch homepage and builds out the full required file structure. **This is the largest step.** Follow the "Building the Remake — Multi-Page Architecture" section below exactly. Required outputs:
 1. Extract the design system from Stitch's `index.html` (colors, fonts, spacing) into `css/styles.css`
-2. Create `js/main.js` with GSAP ScrollTrigger setup (see "GSAP Boilerplate" section below)
+2. Create `js/main.js` with mobile nav toggle and smooth scroll anchors (no GSAP)
 3. Build every page listed in "Required Page Structure": `about.html`, `contact.html`, `faq.html`, `services/[service-1].html`, `services/[service-2].html` (minimum)
 4. Generate `sitemap.xml` and `robots.txt`
 5. Ensure shared nav and footer are identical across all pages
@@ -903,7 +903,7 @@ Every page shares these elements (put in a consistent structure):
 
 **CSS:** One shared `styles.css` loaded by all pages. Mobile-first breakpoints at bottom.
 
-**JS:** One shared `main.js` for GSAP ScrollTrigger, nav interactions, animations.
+**JS:** One shared `main.js` for mobile nav interactions only.
 
 ### Page-by-Page Build Instructions
 
@@ -945,7 +945,7 @@ Every page shares these elements (put in a consistent structure):
 Build ALL pages before moving to the Completion Gate. Suggested order:
 
 1. Create `css/styles.css` with full design system (colors, typography, spacing, mobile breakpoints)
-2. Create `js/main.js` with GSAP setup, ScrollTrigger, nav interactions
+2. Create `js/main.js` with mobile nav interactions, smooth scroll anchors
 3. Build `index.html` with Die 6 section sequence
 4. Build `about.html`
 5. Build `contact.html`
@@ -972,7 +972,7 @@ Build ALL pages before moving to the Completion Gate. Suggested order:
 | Tier | Price | Includes |
 |------|-------|----------|
 | **Basic** | $2,500 | Clean multi-page design, mobile responsive, basic animations, Netlify deploy |
-| **Pro** | $5,000 | + GSAP scroll animations, video hero, testimonial carousel, Core Web Vitals optimized |
+| **Pro** | $5,000 | + CSS scroll animations, video hero, testimonial carousel, Core Web Vitals optimized |
 | **Premium** | $10,000 | + AI video scroll sequences, advanced micro-interactions, full SEO + GEO, ongoing support |
 
 ### Revenue Projection
@@ -1186,7 +1186,7 @@ SLOP DETECTOR — run mentally after building index.html
      - At least ONE element with a unique hover nothing else shares
 
 7. SCROLL LIFE CHECK: Scroll top to bottom mentally.
-   → If nothing moves/appears/changes → GSAP isn't working.
+   → If content is invisible → check opacity:1 on base CSS classes.
    → MINIMUM: 3 scroll-triggered animations on homepage.
      One in hero (load), one in middle (scroll), one near bottom.
 ```
