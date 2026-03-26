@@ -46,9 +46,31 @@ elif [ -f "$SCRAPE_DIR/analysis.md" ]; then
 fi
 
 # Extract real NAP from scraped content
-BUSINESS_NAME=$(grep -i "business name\|company name\|name:" "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 | sed 's/.*: //' | tr -d '[:space:]' || echo "$DOMAIN")
-PHONE=$(grep -oE '\(?\b[0-9]{3}\)?[-.\s][0-9]{3}[-.\s][0-9]{4}\b' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
-ADDRESS=$(grep -i "address\|located at\|visit us" "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 | sed 's/.*: //' || echo "")
+# Business name: from <title> line or first H1 in scraped markdown (most reliable)
+BUSINESS_NAME=$(python3 -c "
+import re, sys
+try:
+    content = open('$SCRAPE_DIR/content.md').read()
+    # Try: title tag content captured as markdown heading or title line
+    m = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+    if m:
+        name = m.group(1).strip()
+        # Clean common suffixes: ' | City', ' - Tagline', ' — City'
+        name = re.split(r'\s*[\|\-–—]\s*', name)[0].strip()
+        if 3 < len(name) < 80:
+            print(name); sys.exit(0)
+    # Fallback: second line of file if it looks like a business name
+    lines = [l.strip() for l in content.splitlines() if l.strip()]
+    for line in lines[:5]:
+        if 3 < len(line) < 80 and not line.startswith('http') and not line.startswith('#'):
+            print(line); sys.exit(0)
+except: pass
+print('')
+" 2>/dev/null)
+# If extraction failed, use domain as fallback (will be overridden by NAP inject if Stitch picks a name)
+[ -z "$BUSINESS_NAME" ] && BUSINESS_NAME=$(echo "$DOMAIN" | sed 's/\.[^.]*$//' | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1')
+PHONE=$(grep -oE '\(?\b[0-9]{3}\)?[-. ][0-9]{3}[-. ][0-9]{4}\b' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
+ADDRESS=$(grep -oE '[0-9]+\s+[NSEW]?\s*[A-Za-z]+(?:\s+[A-Za-z]+)?\s+(Ave|St|Blvd|Dr|Rd|Ln|Way|Ct|Pl|Pkwy)\.?' "$SCRAPE_DIR/content.md" 2>/dev/null | head -1 || echo "")
 
 echo "Business: $BUSINESS_NAME | Phone: $PHONE | Niche: $NICHE | City: $CITY"
 
@@ -216,8 +238,8 @@ REAL_ADDRESS = """${ADDRESS}"""
 REAL_CITY    = """${CITY}"""
 
 if not REAL_NAME:
-    print("⚠️  BUSINESS_NAME empty — skipping NAP inject")
-    sys.exit(0)
+    print("⚠️  BUSINESS_NAME empty — phone/address inject will still run")
+    # Don't exit — still fix phone and address
 
 # ── 1. Find what Stitch called the business ──────────────────────────────────
 # Stitch puts the invented name in <title>, <h1>, and nav logo. Extract from <title>.
