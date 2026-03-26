@@ -199,41 +199,49 @@ curl -sL "$IMAGE_URL" -o "$BUILD_DIR/assets/stitch-preview.jpg"
 INDEX_SIZE=$(wc -c < "$BUILD_DIR/index.html")
 echo "✅ Stitch homepage: ${INDEX_SIZE} bytes"
 
-# ── Post-process: Progressive enhancement fix for .reveal ────────────────────
-# Stitch generates .reveal { opacity:0 } which causes blank pages if GSAP CDN
-# fails. Fix: make content visible by default, animate only if GSAP loads.
-echo "Applying progressive enhancement fix..."
+# ── Post-process: Strip GSAP — content always visible, no animation hiding ────
+# GSAP opacity:0 animations cause blank pages. We remove GSAP entirely.
+# Content must be visible without JS. No exceptions.
+echo "Stripping GSAP animations for always-visible content..."
 
-# Fix CSS: .reveal visible by default, .reveal.animate starts hidden
 python3 << PYFIX_EOF
-import re, sys
+import re
 
 with open("$BUILD_DIR/index.html", "r") as f:
     html = f.read()
 
-# Fix embedded <style> blocks
-old_reveal = r'\.reveal\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(30px\);\s*\}'
-new_reveal = '.reveal {\n    opacity: 1;\n    transform: translateY(0);\n    transition: opacity 0.6s ease, transform 0.6s ease;\n}'
-html = re.sub(old_reveal, new_reveal, html)
+# 1. Remove GSAP <script> tags
+html = re.sub(r'<script[^>]*gsap[^>]*></script>\s*', '', html)
+html = re.sub(r'<script[^>]*ScrollTrigger[^>]*></script>\s*', '', html)
 
-old_show = r'\.reveal\.show\s*\{\s*opacity:\s*1;\s*transform:\s*translateY\(0\);\s*transition:[^}]+\}'
-new_show = '.reveal.animate {\n    opacity: 0;\n    transform: translateY(30px);\n}\n\n.reveal.animate.show {\n    opacity: 1;\n    transform: translateY(0);\n    transition: opacity 0.6s ease, transform 0.6s ease;\n}'
-html = re.sub(old_show, new_show, html)
+# 2. Fix any opacity:0 or opacity: 0 in <style> blocks — set to 1
+def fix_style_block(m):
+    style = m.group(0)
+    # Replace opacity:0 / opacity: 0 with opacity:1 (skip :hover, .active, .open, .hamburger)
+    lines = style.split('\n')
+    result = []
+    in_safe = False
+    for line in lines:
+        if any(x in line for x in [':hover', '.active', '.open', '.hamburger', 'nav-drawer']):
+            in_safe = True
+        if '}' in line and in_safe:
+            in_safe = False
+            result.append(line)
+            continue
+        if not in_safe:
+            line = re.sub(r'opacity:\s*0(?!\.)', 'opacity: 1', line)
+            line = re.sub(r'opacity:0(?!\.)', 'opacity:1', line)
+        result.append(line)
+    return '\n'.join(result)
 
-# Fix embedded <script> blocks: wrap GSAP in typeof check
-# Add .animate class injection right after gsap.registerPlugin
-old_gsap = r'gsap\.registerPlugin\(ScrollTrigger\);'
-new_gsap = '''if (typeof gsap !== "undefined") {
-gsap.registerPlugin(ScrollTrigger);
-document.querySelectorAll(".reveal").forEach(el => el.classList.add("animate"));'''
-html = re.sub(old_gsap, new_gsap, html)
+html = re.sub(r'<style[^>]*>.*?</style>', fix_style_block, html, flags=re.DOTALL)
 
-# Close the if block before </script>
-html = html.replace('</script>', '}\n</script>', 1)
+# 3. Strip GSAP from any external css/styles.css link (add version to bust cache)
+# (handled separately in multi-file builds)
 
 with open("$BUILD_DIR/index.html", "w") as f:
     f.write(html)
-print("✅ Progressive enhancement fix applied to index.html")
+print("✅ GSAP stripped — content always visible")
 PYFIX_EOF
 
 echo ""
