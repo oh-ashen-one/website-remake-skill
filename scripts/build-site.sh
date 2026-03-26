@@ -120,8 +120,8 @@ DESIGN RULES (MANDATORY):
 - NO emojis anywhere on the page
 - NO purple, violet, lavender, or indigo anywhere
 - Mobile-first responsive layout
-- GSAP ScrollTrigger animations (staggered fade-up on scroll enter)
-- No external dependencies except GSAP CDN
+- No JavaScript animation libraries. No GSAP. No ScrollTrigger. CSS transitions only.
+- No external JS dependencies. All elements opacity:1 by default. Never use opacity:0.
 
 REAL BUSINESS DATA — use verbatim:
 - Business name: ${BUSINESS_NAME}
@@ -198,6 +198,99 @@ curl -sL "$IMAGE_URL" -o "$BUILD_DIR/assets/stitch-preview.jpg"
 
 INDEX_SIZE=$(wc -c < "$BUILD_DIR/index.html")
 echo "✅ Stitch homepage: ${INDEX_SIZE} bytes"
+
+# ── Post-process: Inject real NAP data — Stitch invents placeholder names/phones ─
+# Stitch ignores real business data in the prompt and generates its own creative values.
+# We must find+replace all Stitch-invented data with the real scraped values.
+echo "Injecting real NAP data (Stitch generates placeholder names/phones)..."
+
+python3 << NAP_INJECT_EOF
+import re, sys
+
+with open("${BUILD_DIR}/index.html", "r") as f:
+    html = f.read()
+
+REAL_NAME    = """${BUSINESS_NAME}"""
+REAL_PHONE   = """${PHONE}"""
+REAL_ADDRESS = """${ADDRESS}"""
+REAL_CITY    = """${CITY}"""
+
+if not REAL_NAME:
+    print("⚠️  BUSINESS_NAME empty — skipping NAP inject")
+    sys.exit(0)
+
+# ── 1. Find what Stitch called the business ──────────────────────────────────
+# Stitch puts the invented name in <title>, <h1>, and nav logo. Extract from <title>.
+title_match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+stitch_name = None
+if title_match:
+    raw = title_match.group(1)
+    # Title is usually "Stitch Name | tagline" or "Stitch Name – tagline"
+    stitch_name = re.split(r'[|\-–—]', raw)[0].strip()
+    if len(stitch_name) > 60 or len(stitch_name) < 3:
+        stitch_name = None
+
+if stitch_name and stitch_name.lower() != REAL_NAME.lower():
+    count = html.lower().count(stitch_name.lower())
+    # Case-insensitive replace preserving surrounding context
+    html = re.sub(re.escape(stitch_name), REAL_NAME, html, flags=re.IGNORECASE)
+    print(f"✅ Replaced Stitch name '{stitch_name}' with '{REAL_NAME}' ({count} occurrences)")
+else:
+    print(f"ℹ️  Name already correct or not found in title: '{stitch_name}'")
+
+# ── 2. Replace any US phone numbers that aren't the real one ─────────────────
+if REAL_PHONE:
+    # Pattern: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
+    phone_pattern = r'\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}'
+    fake_phones = re.findall(phone_pattern, html)
+    replaced_phones = set()
+    for fake in fake_phones:
+        # Normalize: strip non-digits
+        digits = re.sub(r'\D', '', fake)
+        real_digits = re.sub(r'\D', '', REAL_PHONE)
+        if digits != real_digits and fake not in replaced_phones:
+            html = html.replace(fake, REAL_PHONE)
+            replaced_phones.add(fake)
+    if replaced_phones:
+        print(f"✅ Replaced phones {replaced_phones} → {REAL_PHONE}")
+    else:
+        print(f"ℹ️  No placeholder phones found (real phone: {REAL_PHONE})")
+
+# ── 3. Replace Stitch-invented address lines ──────────────────────────────────
+if REAL_ADDRESS:
+    # Match common address patterns Stitch uses: "123 Main St", "456 N Michigan Ave", etc.
+    addr_pattern = r'\d+\s+[NSEW]?\s*\w+(?:\s+\w+)?\s+(?:Ave|St|Blvd|Dr|Rd|Ln|Way|Ct|Pl|Pkwy)\.?(?:\s*,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})?'
+    fake_addrs = re.findall(addr_pattern, html, flags=re.IGNORECASE)
+    replaced_addrs = set()
+    for fake in fake_addrs:
+        fake_stripped = fake.strip()
+        real_stripped = REAL_ADDRESS.strip()
+        # Normalize for comparison
+        if fake_stripped.lower() != real_stripped.lower() and fake_stripped not in replaced_addrs:
+            html = html.replace(fake_stripped, real_stripped)
+            replaced_addrs.add(fake_stripped)
+    if replaced_addrs:
+        print(f"✅ Replaced addresses: {replaced_addrs}")
+    else:
+        print(f"ℹ️  No placeholder addresses found")
+
+# ── 4. Replace tel: links with real phone ────────────────────────────────────
+if REAL_PHONE:
+    real_tel = re.sub(r'\D', '', REAL_PHONE)
+    if not real_tel.startswith('1'):
+        real_tel_link = f"+1{real_tel}"
+    else:
+        real_tel_link = f"+{real_tel}"
+    # Replace any tel: href that isn't the real number
+    html = re.sub(r'href="tel:[^"]*"', f'href="tel:{real_tel_link}"', html)
+    print(f"✅ All tel: links updated to {real_tel_link}")
+
+with open("${BUILD_DIR}/index.html", "w") as f:
+    f.write(html)
+print("✅ NAP injection complete")
+NAP_INJECT_EOF
+
+echo ""
 
 # ── Post-process: Strip GSAP — content always visible, no animation hiding ────
 # GSAP opacity:0 animations cause blank pages. We remove GSAP entirely.
