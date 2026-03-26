@@ -59,28 +59,53 @@ try:
     content = open('$SCRAPE_DIR/content.md').read()
     lines = [l.strip() for l in content.splitlines() if l.strip()]
 
-    # Strategy 1: First non-heading line is usually the <title> text from Firecrawl
-    # e.g. 'Best Dentist In Nashville | Dentistry Of Nashville'
-    # Take the LAST segment after | or – (that's usually the business name)
+    # Garbage patterns to strip from extracted names
+    # Catches icon class names, CSS artifacts, social media references, HTML fragments
+    GARBAGE_RE = re.compile(
+        r'(tiktok|facebook|instagram|twitter|youtube|linkedin|pinterest|snapchat|'
+        r'_fill|_outline|_rounded|_sharp|_twotone|icon[-_]|svg[-_]|fa[-_]|'
+        r'class=|style=|href=|<[^>]+>|&[a-z]+;|\\\\[a-z]|'
+        r'material[-_]?symbols?|lucide|heroicon|phosphor|feather)',
+        re.IGNORECASE
+    )
+
+    def clean_name(raw):
+        \"\"\"Strip garbage artifacts from extracted business name.\"\"\"
+        if not raw:
+            return ''
+        # Remove any garbage pattern matches
+        cleaned = GARBAGE_RE.sub('', raw).strip()
+        # Remove leftover underscores, double spaces, leading/trailing punctuation
+        cleaned = re.sub(r'[_]', ' ', cleaned)
+        cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+        cleaned = cleaned.strip(' .,;:-–—|/')
+        # Reject if mostly non-alpha (icon class names, CSS selectors)
+        alpha_ratio = sum(1 for c in cleaned if c.isalpha()) / max(len(cleaned), 1)
+        if alpha_ratio < 0.5:
+            return ''
+        return cleaned
+
+    # Strategy 1: First non-heading line with | separator (Firecrawl title line)
     for line in lines[:3]:
         if not line.startswith('#') and not line.startswith('http') and '|' in line:
             parts = re.split(r'\s*[\|]\s*', line)
-            # Last segment tends to be the proper business name
-            name = parts[-1].strip()
-            if 3 < len(name) < 80:
-                print(name); sys.exit(0)
+            # Try last segment first, then first segment
+            for segment in [parts[-1], parts[0]]:
+                name = clean_name(segment)
+                if 3 < len(name) < 80:
+                    print(name); sys.exit(0)
 
-    # Strategy 2: First non-heading line with no | — treat as title, clean it
+    # Strategy 2: First non-heading line with no | — treat as title
     for line in lines[:3]:
         if not line.startswith('#') and not line.startswith('http') and 3 < len(line) < 80:
-            name = re.split(r'\s*[\|\-–—]\s*', line)[0].strip()
+            name = clean_name(re.split(r'\s*[\|\-–—]\s*', line)[0])
             if 3 < len(name) < 80:
                 print(name); sys.exit(0)
 
-    # Strategy 3: First H1 heading — clean tagline/city suffix
+    # Strategy 3: First H1 heading
     m = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
     if m:
-        name = re.split(r'\s*[\|\-–—]\s*', m.group(1).strip())[0].strip()
+        name = clean_name(re.split(r'\s*[\|\-–—]\s*', m.group(1).strip())[0])
         if 3 < len(name) < 80:
             print(name); sys.exit(0)
 except: pass
@@ -157,6 +182,31 @@ const instruction = Object.entries(nicheInstructions)
   .find(([k]) => "${NICHE}".toLowerCase().includes(k))?.[1]
   || 'Dark professional theme. Trust signals. Strong CTA in hero.';
 
+// ── DICE ROLLS — vary layout every build ──
+const NAV_STYLES = [
+  'Full-width bar: dark background, logo text left, page links centered, phone number and CTA button on the right. Always visible.',
+  'Off-canvas drawer: minimal wordmark top-left with hamburger icon. Tapping hamburger opens a full-screen dark overlay menu with large centered links, phone number at bottom. Desktop shows full nav bar instead.',
+  'Sticky shrink: starts tall (80px) with large logo and spread-out links. On scroll, compresses to a slim 48px bar with smaller text. Phone number always visible in both states.',
+  'Floating island: no nav visible on load. After scrolling 200px, a small rounded pill/capsule bar fades in at top-center with compact logo + links + phone. Dark with subtle blur backdrop.',
+];
+const HERO_STYLES = [
+  'Split-screen: left half is dark panel with headline, subtext, and dual CTAs stacked vertically. Right half is a large background-image placeholder (16:9 aspect) with dark overlay at edges. Clean division.',
+  'Full-bleed editorial: single large background-image placeholder fills entire hero. Dark gradient overlay (bottom 60%) for text readability. Headline and CTAs centered or bottom-left over the image.',
+  'Asymmetric offset: hero text block positioned top-left with generous whitespace. A large angled or clipped image placeholder sits bottom-right, overlapping into the next section slightly. Feels editorial, not template-y.',
+  'Stacked cinematic: narrow letterbox image strip across full width (250px tall) at the very top, then below it a dark panel with large headline, subtext, and CTAs. Feels like a movie title card.',
+];
+const SECTION_SEQUENCES = [
+  'Hero → Services (tabbed interface or accordion, NOT a plain grid) → Trust signals/stats horizontal bar → Testimonials carousel → FAQ accordion → Contact form with map',
+  'Hero → About/story section (split: text left, image right) → Services (alternating: odd rows = image left + text right, even rows = flipped) → Testimonials → Contact',
+  'Hero → Trust badges strip (logos or certification icons) → Services bento grid (mixed card sizes, not uniform) → Media/portfolio section → Testimonials → FAQ → Contact',
+  'Hero → Services lead (large bento grid with one featured card 2x size) → Stats counter bar → About split-screen → Testimonials masonry → Contact',
+];
+
+const navRoll = Math.floor(Math.random() * NAV_STYLES.length);
+const heroRoll = Math.floor(Math.random() * HERO_STYLES.length);
+const sectionRoll = Math.floor(Math.random() * SECTION_SEQUENCES.length);
+console.log(\`🎲 Dice rolls — Nav: \${navRoll} | Hero: \${heroRoll} | Sections: \${sectionRoll}\`);
+
 const prompt = \`
 Homepage for ${BUSINESS_NAME}, a ${NICHE} business in ${CITY}.
 
@@ -176,14 +226,16 @@ REAL BUSINESS DATA — use verbatim:
 - City: ${CITY}
 - Niche: ${NICHE}
 
-REQUIRED SECTIONS (in this order):
-1. Nav — logo left, page links right, phone + CTA button
-2. Hero — bold headline "${CITY}'s Trusted ${NICHE}", subtext, dual CTA (call + see services), dark overlay over background image placeholder
-3. Services grid — 3–5 service cards, SVG icon, title, short description, no emojis
-4. Trust/stats bar — years in business, customers served, 5-star reviews count (animate on scroll)
-5. Testimonials — 3 cards with star rating, quote, name
-6. Contact — address, phone, map placeholder, simple contact form
-7. Footer — nav links, phone, copyright
+NAVIGATION STYLE (follow this exactly):
+\${NAV_STYLES[navRoll]}
+
+HERO SECTION STYLE (follow this exactly):
+\${HERO_STYLES[heroRoll]}
+
+PAGE SECTION SEQUENCE (follow this order exactly, do NOT use the generic hero-grid-stats-testimonials-contact pattern):
+\${SECTION_SEQUENCES[sectionRoll]}
+
+Each section must look visually distinct — different background shade, different layout structure. Avoid repeating the same card-grid pattern in multiple sections. Vary between: grids, split layouts, horizontal scrolling strips, accordion/tab panels, and full-width bands.
 
 OUTPUT: Clean semantic HTML with embedded style and script tags. No GSAP. No external JS dependencies. Vanilla JS only. All content visible without JavaScript — opacity must be 1 on all elements by default. No framework. Production-ready.
 \`.trim();
@@ -592,14 +644,14 @@ import random, re
 THEME_NUM = random.randint(0, 7)
 
 THEMES = {
-    0: {"primary": "#1a472a", "bg": "#f5f0e8", "accent": "#2d5a27", "font": "Georgia, serif", "name": "warm-professional", "text_color": "#1a1a1a"},
-    1: {"primary": "#0f4c81", "bg": "#ffffff", "accent": "#1a6bb5", "font": "system-ui, sans-serif", "name": "modern-clean", "text_color": "#1a1a1a"},
-    2: {"primary": "#5c3d2e", "bg": "#faf6f1", "accent": "#d4a96a", "font": "Georgia, serif", "name": "earth-tones", "text_color": "#1a1a1a"},
-    3: {"primary": "#006d6d", "bg": "#f0fafa", "accent": "#00a8a8", "font": "system-ui, sans-serif", "name": "fresh-teal", "text_color": "#1a1a1a"},
-    4: {"primary": "#8b1a1a", "bg": "#fff8f8", "accent": "#c0392b", "font": "Georgia, serif", "name": "warm-red", "text_color": "#1a1a1a"},
-    5: {"primary": "#2c3e50", "bg": "#f8f9fa", "accent": "#3498db", "font": "system-ui, sans-serif", "name": "slate-professional", "text_color": "#1a1a1a"},
-    6: {"primary": "#3d5a40", "bg": "#f4f7f4", "accent": "#7daa7d", "font": "Georgia, serif", "name": "sage-green", "text_color": "#1a1a1a"},
-    7: {"primary": "#1a2a4a", "bg": "#fffef8", "accent": "#c9a84c", "font": "system-ui, sans-serif", "name": "navy-gold", "text_color": "#1a1a1a"},
+    0: {"primary": "#0D2818", "bg": "#111111", "accent": "#4CAF50", "font": "'DM Sans', system-ui, sans-serif", "name": "midnight-forest", "text_color": "#e8e8e8"},
+    1: {"primary": "#0A1628", "bg": "#0F1923", "accent": "#5BA4E6", "font": "'Inter', system-ui, sans-serif", "name": "deep-navy", "text_color": "#e2e8f0"},
+    2: {"primary": "#1A0F0A", "bg": "#151010", "accent": "#D4956A", "font": "'Playfair Display', Georgia, serif", "name": "dark-espresso", "text_color": "#ede0d4"},
+    3: {"primary": "#0D2B35", "bg": "#0E1A1F", "accent": "#4DB6AC", "font": "'Work Sans', system-ui, sans-serif", "name": "deep-ocean", "text_color": "#d4e8e4"},
+    4: {"primary": "#1C0B0B", "bg": "#131010", "accent": "#E63329", "font": "'Oswald', system-ui, sans-serif", "name": "chalk-iron", "text_color": "#eee"},
+    5: {"primary": "#0F1114", "bg": "#131313", "accent": "#B87333", "font": "'Inter', system-ui, sans-serif", "name": "slate-copper", "text_color": "#c8c8c8"},
+    6: {"primary": "#111111", "bg": "#0E0E0E", "accent": "#A8B48B", "font": "'DM Serif Display', Georgia, serif", "name": "monochrome-sage", "text_color": "#d4d4d4"},
+    7: {"primary": "#0D0D1A", "bg": "#111118", "accent": "#C9A84C", "font": "'Clash Display', system-ui, sans-serif", "name": "midnight-gold", "text_color": "#f0e8d4"},
 }
 
 theme = THEMES[THEME_NUM]
@@ -610,20 +662,23 @@ theme_css = f"""<style id="forge-theme">
   --primary: {theme['primary']};
   --bg: {theme['bg']};
   --accent: {theme['accent']};
-  --text: #1a1a1a;
-  --text-light: #444;
+  --text: {theme['text_color']};
+  --text-light: {theme['text_color']}cc;
   --header-font: {theme['font']};
 }}
-/* Force override Stitch inline styles via attribute selectors */
+/* Dark theme overrides — all backgrounds dark, all text light */
 body, body[style], html {{ background-color: {theme['bg']} !important; color: {theme['text_color']} !important; }}
 header[style], nav[style], .header[style], .navbar[style] {{ background-color: {theme['primary']} !important; }}
-footer[style], .footer[style] {{ background-color: {theme['primary']} !important; color: #fff !important; }}
-section[style], div[style*="background"] {{ background-color: var(--bg) !important; }}
-h1[style], h2[style], h3[style], h4[style] {{ color: {theme['primary']} !important; font-family: {theme['font']} !important; }}
+footer[style], .footer[style] {{ background-color: {theme['primary']} !important; color: {theme['text_color']} !important; }}
+section, section[style], div[style*="background"] {{ background-color: {theme['bg']} !important; color: {theme['text_color']} !important; }}
+h1, h2, h3, h4, h1[style], h2[style], h3[style], h4[style] {{ color: {theme['text_color']} !important; font-family: {theme['font']} !important; }}
+p, span, li, td, th, label, blockquote {{ color: {theme['text_color']} !important; }}
 [class*="hero"][style], [class*="hero"] div[style] {{ background-color: {theme['primary']} !important; }}
 [class*="hero"] h1, [class*="hero"] h2 {{ color: #fff !important; }}
-a[style], a {{ color: {theme['accent']} !important; }}
-button[style], .btn[style], [class*="btn"][style] {{ background-color: {theme['accent']} !important; color: #fff !important; border-color: {theme['accent']} !important; }}
+a:not(button a) {{ color: {theme['accent']} !important; }}
+button, .btn, [class*="btn"], input[type="submit"] {{ background-color: {theme['accent']} !important; color: #fff !important; border-color: {theme['accent']} !important; }}
+/* Card surfaces — slightly lighter than body bg for depth */
+[class*="card"], [class*="testimonial"], [class*="service"] {{ background-color: color-mix(in srgb, {theme['bg']} 85%, white) !important; }}
 </style>
 <script id="forge-theme-js">
 (function() {{
@@ -632,31 +687,43 @@ button[style], .btn[style], [class*="btn"][style] {{ background-color: {theme['a
     var bg = '{theme['bg']}';
     var accent = '{theme['accent']}';
     var textColor = '{theme['text_color']}';
-    // Override body background
+    // Override body background + text
     document.body.style.setProperty('background-color', bg, 'important');
     document.body.style.setProperty('color', textColor, 'important');
+    // Override ALL text elements to light color
+    document.querySelectorAll('p, span, li, td, th, label, blockquote, h1, h2, h3, h4, h5, h6').forEach(function(el) {{
+      el.style.setProperty('color', textColor, 'important');
+    }});
     // Override header/nav
-    var headers = document.querySelectorAll('header, nav, .header, .navbar, [class*="header"], [class*="navbar"]');
-    headers.forEach(function(el) {{ el.style.setProperty('background-color', primary, 'important'); }});
-    // Override footer
-    var footers = document.querySelectorAll('footer, .footer, [class*="footer"]');
-    footers.forEach(function(el) {{
+    document.querySelectorAll('header, nav, .header, .navbar, [class*="header"], [class*="navbar"]').forEach(function(el) {{
       el.style.setProperty('background-color', primary, 'important');
-      el.style.setProperty('color', '#fff', 'important');
+    }});
+    // Override sections
+    document.querySelectorAll('section, [class*="section"]').forEach(function(el) {{
+      el.style.setProperty('background-color', bg, 'important');
+      el.style.setProperty('color', textColor, 'important');
+    }});
+    // Override footer
+    document.querySelectorAll('footer, .footer, [class*="footer"]').forEach(function(el) {{
+      el.style.setProperty('background-color', primary, 'important');
+      el.style.setProperty('color', textColor, 'important');
     }});
     // Override hero sections
-    var heros = document.querySelectorAll('[class*="hero"], [id*="hero"]');
-    heros.forEach(function(el) {{ el.style.setProperty('background-color', primary, 'important'); }});
+    document.querySelectorAll('[class*="hero"], [id*="hero"]').forEach(function(el) {{
+      el.style.setProperty('background-color', primary, 'important');
+    }});
     // Override buttons
-    var btns = document.querySelectorAll('button, .btn, [class*="btn"], input[type="submit"]');
-    btns.forEach(function(el) {{
+    document.querySelectorAll('button, .btn, [class*="btn"], input[type="submit"]').forEach(function(el) {{
       el.style.setProperty('background-color', accent, 'important');
       el.style.setProperty('border-color', accent, 'important');
       el.style.setProperty('color', '#fff', 'important');
     }});
-    // Override links
-    var links = document.querySelectorAll('a');
-    links.forEach(function(el) {{ el.style.setProperty('color', accent, 'important'); }});
+    // Override links (not inside buttons)
+    document.querySelectorAll('a:not(button a)').forEach(function(el) {{
+      if (!el.closest('button') && !el.classList.toString().includes('btn')) {{
+        el.style.setProperty('color', accent, 'important');
+      }}
+    }});
   }}
   if (document.readyState === 'loading') {{
     document.addEventListener('DOMContentLoaded', applyTheme);
