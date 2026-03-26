@@ -245,42 +245,7 @@ curl -sL "$IMAGE_URL" -o "$BUILD_DIR/assets/stitch-preview.jpg"
 INDEX_SIZE=$(wc -c < "$BUILD_DIR/index.html")
 echo "✅ Stitch homepage: ${INDEX_SIZE} bytes"
 
-# ── Inject GitHub Pages redirect handler into index.html ─────────────────────
-echo "Injecting GitHub Pages redirect handler..."
-python3 << REDIRECT_INJECT_EOF
-import re
-
-with open("${BUILD_DIR}/index.html", "r") as f:
-    html = f.read()
-
-redirect_script = '''<script>
-  (function() {
-    var redirect = new URLSearchParams(window.location.search).get('p');
-    if (redirect) {
-      window.history.replaceState(null, null, redirect + window.location.hash);
-      if (redirect !== '/' && redirect !== '/index.html') {
-        var page = redirect.replace(/^\\//, '');
-        if (!page.endsWith('.html')) page += '.html';
-        fetch(page).then(function(r) {
-          if (r.ok) return r.text();
-          throw new Error('not found');
-        }).then(function(html) {
-          document.open();
-          document.write(html);
-          document.close();
-        }).catch(function() {});
-      }
-    }
-  })();
-</script>'''
-
-# Insert before </head>
-html = re.sub(r'</head>', redirect_script + '\n</head>', html, count=1)
-
-with open("${BUILD_DIR}/index.html", "w") as f:
-    f.write(html)
-print("✅ GitHub Pages redirect handler injected")
-REDIRECT_INJECT_EOF
+# ── (Redirect handler removed — subpages are real files, no JS routing needed) ──
 
 # ── Post-process: Inject real NAP data — Stitch invents placeholder names/phones ─
 # Stitch ignores real business data in the prompt and generates its own creative values.
@@ -420,6 +385,28 @@ with open("$BUILD_DIR/index.html", "w") as f:
 print("✅ GSAP stripped — content always visible")
 PYFIX_EOF
 
+# ── Fix nav links to use .html extensions (GitHub Pages serves real files) ────
+echo "Fixing nav links to use .html extensions..."
+python3 << FIX_NAV_EOF
+import re
+
+with open("${BUILD_DIR}/index.html", "r") as f:
+    html = f.read()
+
+# Fix href="/about" → href="about.html", href="/services" → href="services.html", etc.
+# Also fix href="about" → href="about.html" (no leading slash)
+pages = ['about', 'services', 'contact']
+for page in pages:
+    # Fix absolute paths: /about, /about/
+    html = re.sub(r'href=["\']/' + page + r'/?["\']', f'href="{page}.html"', html)
+    # Fix bare paths: "about", 'about' (exact match, not part of longer word)
+    html = re.sub(r'href=["\']' + page + r'["\']', f'href="{page}.html"', html)
+
+with open("${BUILD_DIR}/index.html", "w") as f:
+    f.write(html)
+print("✅ Nav links fixed to use .html extensions")
+FIX_NAV_EOF
+
 echo ""
 
 # ── Step 3: Generate hero image with Gemini ─────────────────────────────────
@@ -534,22 +521,18 @@ cat > "$BUILD_DIR/contact.html" << CONTACT_EOF
 CONTACT_EOF
 echo "✅ contact.html"
 
-# Generate 404.html with GitHub Pages redirect script
-cat > "$BUILD_DIR/404.html" << NOTFOUND_EOF
+# Generate 404.html — simple redirect to home
+cat > "$BUILD_DIR/404.html" << 'NOTFOUND_EOF'
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Redirecting...</title>
-<script>
-  var path = window.location.pathname;
-  var search = window.location.search;
-  var hash = window.location.hash;
-  var url = '/?p=' + encodeURIComponent(path) + (search ? '&' + search.slice(1) : '') + hash;
-  window.location.replace(url);
-</script>
+<title>Page Not Found</title>
+<meta http-equiv="refresh" content="0; url=index.html">
 </head>
-<body></body>
+<body>
+<p>Page not found. <a href="index.html">Return home</a></p>
+</body>
 </html>
 NOTFOUND_EOF
 echo "✅ 404.html"
@@ -587,14 +570,14 @@ import random, re
 THEME_NUM = random.randint(0, 7)
 
 THEMES = {
-    0: {"primary": "#1a472a", "bg": "#f5f0e8", "accent": "#2d5a27", "font": "Georgia, serif", "name": "warm-professional"},
-    1: {"primary": "#0f4c81", "bg": "#ffffff", "accent": "#1a6bb5", "font": "system-ui, sans-serif", "name": "modern-clean"},
-    2: {"primary": "#5c3d2e", "bg": "#faf6f1", "accent": "#d4a96a", "font": "Georgia, serif", "name": "earth-tones"},
-    3: {"primary": "#006d6d", "bg": "#f0fafa", "accent": "#00a8a8", "font": "system-ui, sans-serif", "name": "fresh-teal"},
-    4: {"primary": "#8b1a1a", "bg": "#fff8f8", "accent": "#c0392b", "font": "Georgia, serif", "name": "warm-red"},
-    5: {"primary": "#2c3e50", "bg": "#f8f9fa", "accent": "#3498db", "font": "system-ui, sans-serif", "name": "slate-professional"},
-    6: {"primary": "#3d5a40", "bg": "#f4f7f4", "accent": "#7daa7d", "font": "Georgia, serif", "name": "sage-green"},
-    7: {"primary": "#1a2a4a", "bg": "#fffef8", "accent": "#c9a84c", "font": "system-ui, sans-serif", "name": "navy-gold"},
+    0: {"primary": "#1a472a", "bg": "#f5f0e8", "accent": "#2d5a27", "font": "Georgia, serif", "name": "warm-professional", "text_color": "#1a1a1a"},
+    1: {"primary": "#0f4c81", "bg": "#ffffff", "accent": "#1a6bb5", "font": "system-ui, sans-serif", "name": "modern-clean", "text_color": "#1a1a1a"},
+    2: {"primary": "#5c3d2e", "bg": "#faf6f1", "accent": "#d4a96a", "font": "Georgia, serif", "name": "earth-tones", "text_color": "#1a1a1a"},
+    3: {"primary": "#006d6d", "bg": "#f0fafa", "accent": "#00a8a8", "font": "system-ui, sans-serif", "name": "fresh-teal", "text_color": "#1a1a1a"},
+    4: {"primary": "#8b1a1a", "bg": "#fff8f8", "accent": "#c0392b", "font": "Georgia, serif", "name": "warm-red", "text_color": "#1a1a1a"},
+    5: {"primary": "#2c3e50", "bg": "#f8f9fa", "accent": "#3498db", "font": "system-ui, sans-serif", "name": "slate-professional", "text_color": "#1a1a1a"},
+    6: {"primary": "#3d5a40", "bg": "#f4f7f4", "accent": "#7daa7d", "font": "Georgia, serif", "name": "sage-green", "text_color": "#1a1a1a"},
+    7: {"primary": "#1a2a4a", "bg": "#fffef8", "accent": "#c9a84c", "font": "system-ui, sans-serif", "name": "navy-gold", "text_color": "#1a1a1a"},
 }
 
 theme = THEMES[THEME_NUM]
@@ -606,17 +589,60 @@ theme_css = f"""<style id="forge-theme">
   --bg: {theme['bg']};
   --accent: {theme['accent']};
   --text: #1a1a1a;
+  --text-light: #444;
   --header-font: {theme['font']};
 }}
-body {{ background: var(--bg) !important; color: var(--text) !important; }}
-header, nav, .header, .navbar {{ background: var(--primary) !important; }}
-h1, h2, h3, h4 {{ font-family: var(--header-font) !important; color: var(--primary) !important; }}
-.hero, [class*="hero"] {{ background: var(--primary) !important; }}
-.hero h1, .hero h2, [class*="hero"] h1, [class*="hero"] h2 {{ color: #fff !important; font-family: var(--header-font) !important; }}
-a {{ color: var(--accent) !important; }}
-button, .btn, [class*="btn"], input[type="submit"] {{ background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }}
-footer, .footer {{ background: var(--primary) !important; color: #fff !important; }}
-</style>"""
+/* Force override Stitch inline styles via attribute selectors */
+body, body[style], html {{ background-color: {theme['bg']} !important; color: {theme['text_color']} !important; }}
+header[style], nav[style], .header[style], .navbar[style] {{ background-color: {theme['primary']} !important; }}
+footer[style], .footer[style] {{ background-color: {theme['primary']} !important; color: #fff !important; }}
+section[style], div[style*="background"] {{ background-color: var(--bg) !important; }}
+h1[style], h2[style], h3[style], h4[style] {{ color: {theme['primary']} !important; font-family: {theme['font']} !important; }}
+[class*="hero"][style], [class*="hero"] div[style] {{ background-color: {theme['primary']} !important; }}
+[class*="hero"] h1, [class*="hero"] h2 {{ color: #fff !important; }}
+a[style], a {{ color: {theme['accent']} !important; }}
+button[style], .btn[style], [class*="btn"][style] {{ background-color: {theme['accent']} !important; color: #fff !important; border-color: {theme['accent']} !important; }}
+</style>
+<script id="forge-theme-js">
+(function() {{
+  function applyTheme() {{
+    var primary = '{theme['primary']}';
+    var bg = '{theme['bg']}';
+    var accent = '{theme['accent']}';
+    var textColor = '{theme['text_color']}';
+    // Override body background
+    document.body.style.setProperty('background-color', bg, 'important');
+    document.body.style.setProperty('color', textColor, 'important');
+    // Override header/nav
+    var headers = document.querySelectorAll('header, nav, .header, .navbar, [class*="header"], [class*="navbar"]');
+    headers.forEach(function(el) {{ el.style.setProperty('background-color', primary, 'important'); }});
+    // Override footer
+    var footers = document.querySelectorAll('footer, .footer, [class*="footer"]');
+    footers.forEach(function(el) {{
+      el.style.setProperty('background-color', primary, 'important');
+      el.style.setProperty('color', '#fff', 'important');
+    }});
+    // Override hero sections
+    var heros = document.querySelectorAll('[class*="hero"], [id*="hero"]');
+    heros.forEach(function(el) {{ el.style.setProperty('background-color', primary, 'important'); }});
+    // Override buttons
+    var btns = document.querySelectorAll('button, .btn, [class*="btn"], input[type="submit"]');
+    btns.forEach(function(el) {{
+      el.style.setProperty('background-color', accent, 'important');
+      el.style.setProperty('border-color', accent, 'important');
+      el.style.setProperty('color', '#fff', 'important');
+    }});
+    // Override links
+    var links = document.querySelectorAll('a');
+    links.forEach(function(el) {{ el.style.setProperty('color', accent, 'important'); }});
+  }}
+  if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', applyTheme);
+  }} else {{
+    applyTheme();
+  }}
+}})();
+</script>"""
 
 for page in ["index.html", "about.html", "services.html", "contact.html"]:
     path = f"${BUILD_DIR}/" + page
