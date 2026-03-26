@@ -198,6 +198,44 @@ curl -sL "$IMAGE_URL" -o "$BUILD_DIR/assets/stitch-preview.jpg"
 
 INDEX_SIZE=$(wc -c < "$BUILD_DIR/index.html")
 echo "✅ Stitch homepage: ${INDEX_SIZE} bytes"
+
+# ── Post-process: Progressive enhancement fix for .reveal ────────────────────
+# Stitch generates .reveal { opacity:0 } which causes blank pages if GSAP CDN
+# fails. Fix: make content visible by default, animate only if GSAP loads.
+echo "Applying progressive enhancement fix..."
+
+# Fix CSS: .reveal visible by default, .reveal.animate starts hidden
+python3 << PYFIX_EOF
+import re, sys
+
+with open("$BUILD_DIR/index.html", "r") as f:
+    html = f.read()
+
+# Fix embedded <style> blocks
+old_reveal = r'\.reveal\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(30px\);\s*\}'
+new_reveal = '.reveal {\n    opacity: 1;\n    transform: translateY(0);\n    transition: opacity 0.6s ease, transform 0.6s ease;\n}'
+html = re.sub(old_reveal, new_reveal, html)
+
+old_show = r'\.reveal\.show\s*\{\s*opacity:\s*1;\s*transform:\s*translateY\(0\);\s*transition:[^}]+\}'
+new_show = '.reveal.animate {\n    opacity: 0;\n    transform: translateY(30px);\n}\n\n.reveal.animate.show {\n    opacity: 1;\n    transform: translateY(0);\n    transition: opacity 0.6s ease, transform 0.6s ease;\n}'
+html = re.sub(old_show, new_show, html)
+
+# Fix embedded <script> blocks: wrap GSAP in typeof check
+# Add .animate class injection right after gsap.registerPlugin
+old_gsap = r'gsap\.registerPlugin\(ScrollTrigger\);'
+new_gsap = '''if (typeof gsap !== "undefined") {
+gsap.registerPlugin(ScrollTrigger);
+document.querySelectorAll(".reveal").forEach(el => el.classList.add("animate"));'''
+html = re.sub(old_gsap, new_gsap, html)
+
+# Close the if block before </script>
+html = html.replace('</script>', '}\n</script>', 1)
+
+with open("$BUILD_DIR/index.html", "w") as f:
+    f.write(html)
+print("✅ Progressive enhancement fix applied to index.html")
+PYFIX_EOF
+
 echo ""
 
 # ── Step 3: Generate hero + service images with Imagen 4 ──────────────────────
