@@ -742,7 +742,7 @@ FILE CHECK (all must exist on disk):
 [ ] services/[service-1].html — Individual service page #1
 [ ] services/[service-2].html — Individual service page #2
 [ ] css/styles.css           — Shared stylesheet (mobile-first)
-[ ] js/main.js               — Shared GSAP + interactions
+[ ] js/main.js               — Shared interactions (mobile nav only, no GSAP)
 [ ] sitemap.xml             — XML sitemap listing all pages
 [ ] robots.txt              — Robots file referencing sitemap
 [ ] 404.html                — Copy of index.html (GitHub Pages fallback)
@@ -765,10 +765,11 @@ DESIGN CHECK:
 [ ] No emojis anywhere
 [ ] No purple anywhere
 [ ] Mobile responsive at 375px
-[ ] GSAP animations present and smooth
+[ ] No GSAP CDN links anywhere in HTML (hard rule #10)
+[ ] All base CSS classes have opacity: 1 (no opacity: 0 on hero, cards, stats, testimonials)
 [ ] No bare `100dvh` without `100svh` fallback (see Hard Rule 10)
 [ ] Every HTML page loads css/styles.css
-[ ] Every HTML page loads GSAP CDN + ScrollTrigger CDN + js/main.js (in that order)
+[ ] Every HTML page loads js/main.js (mobile nav only)
 
 ASSET CHECK:
 [ ] Hero video or hero image present in assets/
@@ -830,19 +831,17 @@ for f in $(find "$BUILD_DIR" -name "*.html" -o -name "*.css"); do
   fi
 done
 
-# GSAP on every HTML page
+# No GSAP in any HTML page (hard rule)
 for f in $(find "$BUILD_DIR" -name "*.html"); do
-  grep -q "gsap.min.js" "$f" || { echo "FAIL: $f missing GSAP CDN"; PASS=false; }
-  grep -q "ScrollTrigger.min.js" "$f" || { echo "FAIL: $f missing ScrollTrigger CDN"; PASS=false; }
+  grep -q "gsap.min.js\|ScrollTrigger.min.js" "$f" && { echo "FAIL: $f contains GSAP CDN link — violates Hard Rule #10"; PASS=false; }
+  grep -q "opacity: 0\|opacity:0" "$f" && echo "WARN: $f may have opacity:0 — verify base classes are all opacity:1"
   grep -q "<nav" "$f" || { echo "FAIL: $f missing <nav>"; PASS=false; }
   grep -q "<footer" "$f" || { echo "FAIL: $f missing <footer>"; PASS=false; }
 done
 
-# registerPlugin in main.js
+# main.js must not reference GSAP
 if [ -f "$BUILD_DIR/js/main.js" ]; then
-  grep -q "registerPlugin" "$BUILD_DIR/js/main.js" || { echo "FAIL: main.js missing gsap.registerPlugin(ScrollTrigger)"; PASS=false; }
-  SCROLL_COUNT=$(grep -c "scrollTrigger\|ScrollTrigger" "$BUILD_DIR/js/main.js" 2>/dev/null || echo 0)
-  [ "$SCROLL_COUNT" -lt 3 ] && echo "WARN: Only $SCROLL_COUNT scroll triggers in main.js (want ≥3)"
+  grep -q "gsap\|ScrollTrigger\|registerPlugin" "$BUILD_DIR/js/main.js" && { echo "FAIL: main.js references GSAP — remove it (Hard Rule #10)"; PASS=false; }
 else
   echo "FAIL: js/main.js does not exist"
   PASS=false
@@ -888,7 +887,7 @@ Every rebuild produces this file tree. No exceptions:
 ├── css/
 │   └── styles.css             ← Shared stylesheet (mobile-first, extracted from Stitch output)
 ├── js/
-│   └── main.js                ← Shared GSAP + interactions
+│   └── main.js                ← Shared interactions (mobile nav only — no GSAP)
 ├── sitemap.xml                ← XML sitemap with all pages
 ├── robots.txt                 ← Points to sitemap
 └── 404.html                   ← Copy of index.html (GitHub Pages subpage fallback)
@@ -1051,36 +1050,24 @@ Use Firecrawl for structured content (copy, services, testimonials). But always 
 
 ## Animation Stack & Premium Effects
 
-### GSAP Patterns
+### CSS-Only Animation Patterns (No GSAP — Hard Rule #10)
 
-⚠️ **CRITICAL GSAP MOBILE RULES — VIOLATIONS CAUSE BLANK SECTIONS:**
-1. **NEVER use `gsap.from()` with `opacity: 0`** — if ScrollTrigger fails on mobile (iOS Safari timing), elements stay permanently invisible
-2. **ALWAYS add CSS fallback** — every animated element must have `opacity:1;transform:none` in a `@media(max-width:767px)` rule so content is visible even if GSAP fails
-3. **ALWAYS call `ScrollTrigger.refresh()` on `window.load`** — fixes iOS Safari trigger timing
-4. **Use `gsap.fromTo()` not `gsap.from()`** — explicit start AND end states prevent invisible content
-5. **NEVER use `min-height: 100dvh` without `100svh` fallback** — iOS Chrome/Safari include browser chrome in `dvh`, causing a gap below the hero
+**All animations must be CSS-only. GSAP is banned.** Content must be visible without any JS.
 
-**Required JS boilerplate in every `main.js`:**
-```javascript
-gsap.registerPlugin(ScrollTrigger);
-
-// Fix iOS Safari ScrollTrigger timing
-window.addEventListener('load', function() {
-  ScrollTrigger.refresh();
-});
+**Hover transitions (cards, buttons):**
+```css
+.service-card {
+  opacity: 1; /* ALWAYS 1 — never 0 */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
 ```
 
-**Required CSS in every `styles.css`:**
+**Hero height — always include svh fallback before dvh:**
 ```css
-/* GSAP mobile fallback — prevents invisible content if ScrollTrigger fails */
-@media (max-width: 767px) {
-  .service-card, .testimonial-card, .stat-item, .reveal,
-  .hero-eyebrow, .hero h1, .hero-sub, .hero-ctas, .faq-item {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-/* Hero height — always include svh fallback before dvh */
 .hero {
   min-height: 600px;
   min-height: 100svh;
@@ -1088,51 +1075,34 @@ window.addEventListener('load', function() {
 }
 ```
 
-**Text reveal (char-by-char stagger):**
-```javascript
-// Use fromTo — never from() alone
-gsap.fromTo('.headline-word',
-  { opacity: 0, y: 30 },
-  { duration: 0.8, opacity: 1, y: 0, stagger: 0.15, delay: 0.3, ease: "power3.out" }
-);
+**CSS fade-in on page load (acceptable — content is visible immediately, animation is decoration):**
+```css
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-content {
+  opacity: 1; /* base state — visible without animation */
+  animation: fadeUp 0.6s ease forwards;
+}
 ```
 
-**Scroll-triggered cards:**
+**Counter animation (vanilla JS — no GSAP):**
 ```javascript
-gsap.fromTo(".card",
-  { opacity: 0, y: 40 },
-  {
-    scrollTrigger: { trigger: ".section", start: "top 80%", once: true },
-    duration: 0.8, opacity: 1, y: 0, stagger: 0.2, ease: "power3.out"
-  }
-);
-```
-
-**Counter animation:**
-```javascript
-gsap.to(el, {
-  textContent: targetValue, duration: 2,
-  snap: { textContent: 1 },
-  scrollTrigger: { trigger: el, start: "top 80%" },
-  ease: "power3.out"
+function animateCounter(el, target) {
+  let start = 0;
+  const step = target / 60;
+  const timer = setInterval(() => {
+    start += step;
+    el.textContent = Math.min(Math.round(start), target);
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+// Trigger on IntersectionObserver, not ScrollTrigger
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) animateCounter(e.target, +e.target.dataset.target); });
 });
-```
-
-**Horizontal pinned scroll gallery:**
-```javascript
-gsap.to(".h-gallery", {
-  scrollTrigger: {
-    trigger: ".gallery-section", start: "top top",
-    end: () => "+=" + (gallery.scrollWidth - gallery.clientWidth) * 1.5,
-    scrub: 1, pin: true
-  },
-  x: () => -(gallery.scrollWidth - gallery.clientWidth), ease: "none"
-});
-```
-
-**Clip-path reveal:**
-```javascript
-gsap.from(".img", { clipPath: "inset(0 100% 0 0)", duration: 1.2 });
+document.querySelectorAll('[data-target]').forEach(el => observer.observe(el));
 ```
 
 ### Easing Reference
@@ -1528,7 +1498,7 @@ For businesses that take orders or appointments. Replace generic contact forms:
 **State 3: Tracker** — `[●]———[○]———[○]———[○]` progress bar with pulsing active step
 **State 4: History** — localStorage order list with status badges
 
-Uses GSAP state transitions: `gsap.to(current, {opacity:0, x:-50})` then `gsap.from(next, {opacity:0, x:50})`
+Uses CSS transitions for state changes: `opacity: 0; transform: translateX(-50px)` → `opacity: 1; transform: translateX(0)` via class toggle. No GSAP.
 
 ---
 
@@ -1692,96 +1662,49 @@ Sonnet timed out at 10min mid-build. The fix: check `/tmp/[site]/site/` for part
 
 ---
 
-## GSAP Validation — Mandatory Before Completion Gate
+## Vanilla JS Validation — Mandatory Before Completion Gate
 
-GSAP is the #1 source of broken builds. Animations look coded but fail silently.
+No GSAP. All interactivity is vanilla JS (mobile nav toggle, counter animation via IntersectionObserver, smooth scroll). Animations look coded and work on every device.
 
-### The 6 GSAP Killers
-
-```
-KILLER 1: MISSING PLUGIN REGISTRATION
-  First line of main.js (after imports) MUST be:
-    gsap.registerPlugin(ScrollTrigger);
-  Missing this = every ScrollTrigger animation silently fails.
-
-KILLER 2: CDN LOAD ORDER
-  Every HTML file must load scripts in this EXACT order:
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <script src="js/main.js"></script>
-  main.js before gsap = everything breaks.
-
-KILLER 3: SELECTOR MISMATCH
-  For every gsap.to()/gsap.from() call, verify the CSS selector
-  actually exists in HTML, spelled exactly the same (case-sensitive).
-  Common fail: main.js uses ".service-card", HTML uses class="serviceCard".
-
-KILLER 4: INITIAL STATE MISSING
-  If animating FROM opacity:0 and y:60, elements must START there in CSS.
-  Add to styles.css: .gsap-hidden { opacity: 0; transform: translateY(60px); }
-  Add class="gsap-hidden" to every animated element in HTML.
-
-KILLER 5: SCROLLTRIGGER START VALUE
-  start: "top 80%" = correct for most reveals.
-  NEVER use start: "top bottom" — fires before element visible.
-
-KILLER 6: MULTIPLE PAGES, ONE main.js
-  Wrap page-specific animations in existence checks:
-    const hero = document.querySelector('.hero-video');
-    if (hero) { gsap.from(hero, { ... }); }
-  Do this for EVERY selector that only exists on one page.
-```
-
-### Minimum Animation Inventory Per Page
-
-```
-index.html    Hero entrance (load), first section (scroll), stats/counter (scroll), 1+ more, nav transition
-about.html    Stats counter, 1+ scroll reveal
-contact.html  Form/content reveal on scroll
-services/     Card/content stagger on scroll
-ALL PAGES     scroll-behavior: smooth, hover states on all interactive elements
-```
-
-### GSAP Boilerplate — Starting Point for main.js
+### main.js Boilerplate — Starting Point
 
 ```javascript
-// === GSAP SETUP — DO NOT MODIFY THIS BLOCK ===
-gsap.registerPlugin(ScrollTrigger);
-
-function animateIfExists(selector, animProps, triggerOpts = {}) {
-  const elements = document.querySelectorAll(selector);
-  if (!elements.length) return;
-  elements.forEach((el, i) => {
-    gsap.from(el, {
-      ...animProps,
-      delay: (animProps.stagger || 0) * i,
-      scrollTrigger: {
-        trigger: el.closest('section') || el,
-        start: 'top 80%',
-        once: true,
-        ...triggerOpts
-      }
-    });
+// Mobile nav toggle
+const hamburger = document.querySelector('.hamburger');
+const navDrawer = document.querySelector('.nav-drawer');
+if (hamburger && navDrawer) {
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    navDrawer.classList.toggle('open');
   });
 }
 
-// Fade-up reveals (add class="reveal" to any element)
-animateIfExists('.reveal', {
-  opacity: 0, y: 40, duration: 0.8, stagger: 0.15, ease: 'power3.out'
-});
+// Counter animation (no GSAP — IntersectionObserver only)
+const counters = document.querySelectorAll('[data-target]');
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    const target = parseInt(el.dataset.target, 10);
+    let start = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+      start += step;
+      el.textContent = Math.min(Math.round(start), target) + (el.dataset.suffix || '');
+      if (start >= target) clearInterval(timer);
+    }, 16);
+    counterObserver.unobserve(el);
+  });
+}, { threshold: 0.5 });
+counters.forEach(el => counterObserver.observe(el));
 
-// Counter animations (add data-count="150" to any element)
-document.querySelectorAll('[data-count]').forEach(el => {
-  const target = parseInt(el.dataset.count);
-  gsap.from(el, {
-    textContent: 0, duration: 2, ease: 'power3.out',
-    snap: { textContent: 1 },
-    scrollTrigger: { trigger: el, start: 'top 85%' }
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
   });
 });
-
-// === PAGE-SPECIFIC ANIMATIONS BELOW ===
-// Always wrap in: if (document.querySelector('.selector')) { ... }
 ```
 
 ---
