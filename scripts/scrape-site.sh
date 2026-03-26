@@ -21,7 +21,7 @@ if [ -f "$SECRETS_DIR/firecrawl-api-key.txt" ]; then
   FIRECRAWL_API_KEY=$(cat "$SECRETS_DIR/firecrawl-api-key.txt" | tr -d '[:space:]')
 fi
 
-DOMAIN=$(echo "$URL" | sed 's/https\?:\/\///g' | cut -d/ -f1)
+DOMAIN=$(echo "$URL" | sed 's|https://||;s|http://||' | cut -d/ -f1)
 SLUG=$(echo "$DOMAIN" | tr '.' '_')
 OUTPUT_DIR="/tmp/website-remake-targets/$SLUG"
 mkdir -p "$OUTPUT_DIR"
