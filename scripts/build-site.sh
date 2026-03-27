@@ -474,6 +474,35 @@ def fix_hash_link(m):
 
 html = re.sub(r'<a\b[^>]*href="#"[^>]*>.*?</a>', fix_hash_link, html, flags=re.DOTALL|re.IGNORECASE)
 
+# Strategy 3: Fix anchor hrefs that match subpage names
+# href="#about" → about.html, href="#services" → services.html, href="#contact" → contact.html
+anchor_to_page = {
+    '#about': 'about.html',
+    '#services': 'services.html',
+    '#contact': 'contact.html',
+    '#contact-us': 'contact.html',
+    '#our-services': 'services.html',
+}
+for anchor, page in anchor_to_page.items():
+    html = re.sub(r'href=["\']' + re.escape(anchor) + r'["\']', f'href="{page}"', html)
+
+# Also fix subpage nav links — they copy the same anchor pattern
+for subpage in ['about.html', 'services.html', 'contact.html']:
+    subpath = '${BUILD_DIR}/' + subpage
+    import os
+    if os.path.exists(subpath):
+        with open(subpath, 'r') as sf:
+            shtml = sf.read()
+        for anchor, page in anchor_to_page.items():
+            shtml = re.sub(r'href=["\']' + re.escape(anchor) + r'["\']', f'href="{page}"', shtml)
+        # Fix self-referencing anchors on subpages to point back to index
+        shtml = re.sub(r'href=["\']#home["\']', 'href="index.html"', shtml)
+        shtml = re.sub(r'href=["\']#stats["\']', 'href="index.html#stats"', shtml)
+        shtml = re.sub(r'href=["\']#testimonials["\']', 'href="index.html#testimonials"', shtml)
+        shtml = re.sub(r'href=["\']#faq["\']', 'href="index.html#faq"', shtml)
+        with open(subpath, 'w') as sf:
+            sf.write(shtml)
+
 # Report what was fixed
 fixed = re.findall(r'href="(about\.html|services\.html|contact\.html)"', html)
 with open("${BUILD_DIR}/index.html", "w") as f:
