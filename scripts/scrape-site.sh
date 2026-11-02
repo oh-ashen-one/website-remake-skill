@@ -78,18 +78,8 @@ print(text[:5000])
   echo "✅ Raw content saved: $OUTPUT_DIR/content.md"
 fi
 
-# ── Load Netlify token for deploy commands ────────────────────────────────────
-if [ -f "$SECRETS_DIR/netlify.env" ]; then
-  source "$SECRETS_DIR/netlify.env"
-fi
-# Also check memory for known token
-# Load Netlify token from secrets — never hardcode
-if [ -f "$SECRETS_DIR/netlify-token.txt" ]; then
-  NETLIFY_TOKEN=$(cat "$SECRETS_DIR/netlify-token.txt" | tr -d '[:space:]')
-fi
-if [ -z "$NETLIFY_TOKEN" ]; then
-  echo "⚠️  NETLIFY_TOKEN not found in $SECRETS_DIR/netlify-token.txt — deploy step will need manual token"
-fi
+# Scraping does not need deployment credentials. Never load or print them here:
+# this output may be copied into prompts or captured in pipeline logs.
 
 echo ""
 echo "════════════════════════════════════════"
@@ -106,6 +96,7 @@ echo "🚀 Next steps:"
 echo "  1. Review content above — extract brand colors, copy, key sections"
 echo "  2. Open Claude Code at claude.ai"
 echo "  3. Use SKILL.md → 'Build Pipeline' → paste the full-site-rebuild prompt"
-echo "  4. Deploy: netlify deploy --dir=./dist --auth=$NETLIFY_TOKEN --prod"
+echo "  4. Deploy: netlify deploy --dir=./dist --prod"
+echo "     Authenticate separately with netlify login or a securely configured NETLIFY_AUTH_TOKEN."
 echo "  5. Send outreach: ./send-email.sh --to OWNER_EMAIL --url https://PREVIEW.netlify.app"
 echo ""
